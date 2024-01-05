@@ -1,0 +1,12 @@
+- background - image? galaxies blurried?
+- foreground - mountains, lake/sea with reflections
+- highlights - galaxy names, prevalent stars, galaxy boundaries, constellations
+  - remember what's already been shown
+  - reveal and disappear
+- movement/rotation
+- menu - speed d/s, w/s, m/s
+- js https://kaeruct.github.io/posts/starry-sky-in-html5-canvas-pt2.html
+- show available data
+- meteors/comets - authors
+- configurable colors
+
