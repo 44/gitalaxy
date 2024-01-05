@@ -136,7 +136,10 @@ class Sky:
         v = (p.s + p.x + p.y) % 15
         vars = [(r, r)]  * 12 + [(r - 1, r), (r, r - 1), (r - 1, r - 1)]
         dx, dy = vars[v]
-        return [ (p.x, p.y - dy), (p.x, p.y + dy), (p.x, p.y), (p.x - dx, p.y), (p.x + dx, p.y) ]
+        extra = [ (p.x, p.y), (p.x + 1, p.y + 1), (p.x, p.y), (p.x + 1, p.y - 1), (p.x, p.y), (p.x - 1, p.y +1), (p.x, p.y), (p.x -1, p.y -1) ]
+        if r <= 2 or v > 10:
+            extra = []
+        return [ (p.x, p.y - dy + 1), (p.x, p.y + dy), (p.x, p.y), (p.x - dx + 1, p.y), (p.x + dx, p.y) ] + extra
         # if v == 0:
         #     return [(p.x, p.y - r), (p.x, p.y + r), (p.x + r, p.y), (p.x -r, p.y) ]
         # elif v == 1:
