@@ -73,8 +73,8 @@ class Sky:
             self.scales[dname] = Constellation(x, y, 1, set([fname]))
     def advance(self, changes):
         # decay
-        for fname in sorted(self.stars.keys()):
-            s = self.stars[fname]
+        for key in sorted(self.stars.keys()):
+            s = self.stars[key]
             if s.brightness == 10:
                 pass
                 # del self.stars[fname]
@@ -83,15 +83,15 @@ class Sky:
         for change in changes:
             dname = os.path.dirname(change)
             fname = os.path.basename(change)
-            if fname in self.stars:
-                nb = self.stars[fname].brightness + 10
-                self.stars[fname].brightness = nb
+            if change in self.stars:
+                nb = self.stars[change].brightness + 10
+                self.stars[change].brightness = nb
                 if nb > self.max_brightness:
                     self.max_brightness = nb
                     self.brightest = fname
             else:
                 x, y = self.get_position(dname, fname)
-                self.stars[fname] = Star(x=x, y=y, brightness=80, color=self.get_color(fname))
+                self.stars[change] = Star(x=x, y=y, brightness=80, color=self.get_color(fname))
 
     def get_position(self, dname, fname):
         cnst = self.scales[dname]
@@ -135,7 +135,8 @@ class Sky:
         for s in self.stars.values():
             p = self.project(s, w, h)
             if p.s > 100:
-                cnv.ellipse( (p.x - 1, p.y -1, p.x + 1, p.y + 1), p.c, None, 0)
+                r = math.log(p.s / 100, 10) + 1
+                cnv.ellipse( (p.x - r, p.y - r, p.x + r, p.y + r), p.c, None, 0)
             else:
                 px[p.x, p.y] = p.c
         # ImageDraw.Draw(img).text((0, 0), txt + " " + str(len(self.stars)), (200, 200, 200))
@@ -226,6 +227,6 @@ images = []
 for k in sorted(result.keys()):
     sky.advance(result[k])
     images.append(sky.draw(1200, 800, k))
-    print(k, len(result[k]), sky.brightest, sky.max_brightness)
+    print(k, len(result[k]), len(sky.stars.keys()), sky.brightest, sky.max_brightness)
 
 images[0].save('sky.gif', save_all=True, append_images=images[1:], optimize=False, loop=0, duration=100)
