@@ -1,7 +1,8 @@
 cur_date=""
-git log --date=format:'%Y-%m-%d' --format='%ad' --name-only | grep -v '^$' | while read l; do
+cd $1
+git log --date=format:'%Y-%m-%d' --format="=%ad '%ae'" --name-status | grep -v '^$' | while read l; do
 case $l in
-    20*)
+    =*)
         cur_date=$l
         ;;
     *)
