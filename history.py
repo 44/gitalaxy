@@ -38,6 +38,7 @@ class Constellation:
 
 @dataclass
 class Star:
+    n: str
     x: int
     y: int
     brightness: int
@@ -91,7 +92,7 @@ class Sky:
                     self.brightest = fname
             else:
                 x, y = self.get_position(dname, fname)
-                self.stars[change] = Star(x=x, y=y, brightness=80, color=self.get_color(fname))
+                self.stars[change] = Star(n = fname, x=x, y=y, brightness=80, color=self.get_color(fname))
 
     def get_position(self, dname, fname):
         cnst = self.scales[dname]
@@ -141,6 +142,10 @@ class Sky:
                 px[p.x, p.y] = p.c
         # ImageDraw.Draw(img).text((0, 0), txt + " " + str(len(self.stars)), (200, 200, 200))
         cnv.text((0, 0), txt + " " + str(len(self.stars)), (200, 200, 200))
+        top5 = sorted(self.stars.values(), key = lambda s: s.brightness, reverse = True)[:5]
+        for s in top5:
+            p = self.project(s, w, h)
+            cnv.text( (p.x + 20, p.y + 20), s.n, s.color)
         return img
 
 
