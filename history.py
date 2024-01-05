@@ -114,6 +114,7 @@ class Sky:
         if fname.endswith('.h'):
             color = (255, 255, 255)
         return color
+
     def project(self, s, w, h):
         x = int(s.x * w / 256 / 256)
         y = int(s.y * h / 256 / 256)
@@ -129,23 +130,49 @@ class Sky:
         b = min(100, s.brightness)
         c = (int(c[0] * b / 100), int(c[1] * b / 100), int(c[2] * b / 100))
         return Projection(x=x, y=y, c = c, s = s.brightness)
+
+    def get_shape(self, p):
+        r = math.log(p.s / 100, 10) + 1
+        v = (p.s + p.x + p.y) % 15
+        vars = [(r, r)]  * 12 + [(r - 1, r), (r, r - 1), (r - 1, r - 1)]
+        dx, dy = vars[v]
+        return [ (p.x, p.y - dy), (p.x, p.y + dy), (p.x, p.y), (p.x - dx, p.y), (p.x + dx, p.y) ]
+        # if v == 0:
+        #     return [(p.x, p.y - r), (p.x, p.y + r), (p.x + r, p.y), (p.x -r, p.y) ]
+        # elif v == 1:
+        #     return [(p.x, p.y - r), (p.x -r, p.y), (p.x, p.y + r), (p.x + r, p.y) ]
+        # elif v == 2:
+        #     return [(p.x, p.y - r), (p.x + r, p.y), (p.x, p.y + r), (p.x -r, p.y) ]
+        # else:
+        #     return [(p.x, p.y - r), (p.x + r, p.y), (p.x -r, p.y), (p.x, p.y + r)]
+
+
+
+    def draw_star(self, px, cnv, p):
+        if p.s > 100:
+            # r = math.log(p.s / 100, 10) + 1
+            cnv.line(self.get_shape(p), p.c)
+            # if r <= 2:
+            #     cnv.ellipse( (p.x - r, p.y - r, p.x + r, p.y + r), p.c, None, 0)
+            # else:
+            #     cnv.line([ (p.x, p.y - r), (p.x, p.y + r), (p.x + r, p.y), (p.x -r, p.y) ], p.c)
+        else:
+            cnv.point([(p.x, p.y)], p.c)
+            # px[p.x, p.y] = p.c
+
     def draw(self, w, h, txt):
         img = Image.new('RGB', (w, h), color='black')
         px = img.load()
         cnv = ImageDraw.Draw(img)
         for s in self.stars.values():
             p = self.project(s, w, h)
-            if p.s > 100:
-                r = math.log(p.s / 100, 10) + 1
-                cnv.ellipse( (p.x - r, p.y - r, p.x + r, p.y + r), p.c, None, 0)
-            else:
-                px[p.x, p.y] = p.c
+            self.draw_star(px, cnv, p)
         # ImageDraw.Draw(img).text((0, 0), txt + " " + str(len(self.stars)), (200, 200, 200))
         cnv.text((0, 0), txt + " " + str(len(self.stars)), (200, 200, 200))
-        top5 = sorted(self.stars.values(), key = lambda s: s.brightness, reverse = True)[:5]
-        for s in top5:
-            p = self.project(s, w, h)
-            cnv.text( (p.x + 20, p.y + 20), s.n, s.color)
+        # top5 = sorted(self.stars.values(), key = lambda s: s.brightness, reverse = True)[:5]
+        # for s in top5:
+        #     p = self.project(s, w, h)
+        #     cnv.text( (p.x + 5, p.y - 5), s.n, s.color)
         return img
 
 
