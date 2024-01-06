@@ -7,6 +7,6 @@
 - menu - speed d/s, w/s, m/s
 - js https://kaeruct.github.io/posts/starry-sky-in-html5-canvas-pt2.html
 - show available data
-- meteors/comets - authors
+- meteors/comets - authors (anniversaries - every 100 commits)
 - configurable colors
 
