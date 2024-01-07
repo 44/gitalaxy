@@ -67,22 +67,23 @@ function renderMoon(ctx, blur, ts) {
   document.getElementById("status").innerHTML = cutoff + " stars: " + Object.keys(stars).length;
 }
 
-function applyDecay(ts) {
+function applyDecay(curDate) {
     for (const n in stars)
     {
         const star = stars[n];
-        const daysFromLastHit = (ts - star.l) / 1000 * daysPerSecond;
+        const daysFromLastHit = Math.floor((curDate.getTime() - star.l.getTime()) / 1000 / 60 / 60 / 24);
         if (daysFromLastHit < 30)
         {
             continue;
         }
-        const daysFromLastDecay = Math.floor((ts - star.ld) / 1000 * daysPerSecond);
+        const daysFromLastDecay = Math.floor((curDate.getTime() - star.ld.getTime()) / 1000 / 60 / 60 / 24);
         if (daysFromLastDecay < 1)
         {
             continue;
         }
-        star.d += daysFromLastDecay;
-        star.ld = ts;
+        const factor = (daysFromLastHit > 365) ? 5 : ((daysFromLastHit > 160) ? 2 : 1);
+        star.d += daysFromLastDecay * factor;
+        star.ld = curDate;
 
         if (star.d > star.h * 10)
         {
@@ -94,7 +95,7 @@ function applyDecay(ts) {
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
-    applyDecay(ts);
+    applyDecay(curDate);
 
     /*
     let decayDiff = (ts - state.lastTs) / 1000 * daysPerSecond;
@@ -128,9 +129,9 @@ function updateStars(ts) {
             const key = s.x.toString() + ":" + s.y.toString();
             if (key in stars) {
                 stars[key].r += 0.01;
-                stars[key].l = ts;
+                stars[key].l = curDate;
                 stars[key].h++;
-                stars[key].ld = ts;
+                stars[key].ld = curDate;
                 if (stars[key].r > 3) {
                     stars[key].r = 3;
                 }
@@ -140,10 +141,10 @@ function updateStars(ts) {
                     x: s.x * width / 256 / 256,
                     y: s.y * height / 256 / 256,
                     r: 1.0, // radius - should be calculated from the number of hits and decay
-                    l: ts, // last hit
+                    l: curDate, // last hit
                     h: 1, // hits
                     d: 0, // decay
-                    ld: ts, // last decay
+                    ld: curDate, // last decay
                 };
                 stars[key] = star;
             }
