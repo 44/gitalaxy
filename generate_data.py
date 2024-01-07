@@ -2,7 +2,7 @@ import subprocess
 import sys
 import os
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from hashlib import blake2b
 from functools import cache
 import math
@@ -44,11 +44,36 @@ class Star:
             "c": self.c
         }
 
+@dataclass
+class State:
+    date: str = None
+    commit: str = None
+    author: str = None
+    changed: list[dict] = field(default_factory=list)
+    removed: list[dict] = field(default_factory=list)
+
+@dataclass
+class SavedState:
+    start: str = None
+    end: str = None
+    data: list[str] = field(default_factory=list)
+    commit: str = None
+    counter: int = 0
+    def as_dict(self):
+        return {
+            "start": self.start,
+            "end": self.end,
+            "data": self.data,
+            "commit": self.commit,
+            "counter": self.counter
+        }
+
 class Sky:
     def __init__(self, root):
         self.root = root
         self.galaxies = {}
         self.changes = []
+        self.saved = SavedState()
 
     def load_galaxies(self):
         git_args = ['git', 'ls-files']
@@ -76,9 +101,48 @@ class Sky:
     def get_star(self, dname, fname):
         return Star(self.get_galaxy(dname), fname)
 
+    def save_changes(self, force=False):
+        if self.saved.start is None:
+            if len(self.changes) > 0:
+                self.saved.start = self.changes[0]['date']
+        need_save = force
+        if not need_save:
+            size = 0
+            for c in self.changes:
+                size += len(c['on']) + len(c['off'])
+            if size < 10000:
+                return
+
+        if len(self.changes) == 0:
+            return
+        os.makedirs("changes", exist_ok=True)
+        json.dump(self.changes, open(f"changes/{self.saved.counter}.json", "w"), indent=4)
+        if len(self.changes) > 0:
+            self.saved.end = self.changes[-1]['date']
+            self.saved.commit = self.changes[-1]['commit']
+        self.changes = []
+        self.saved.data.append(f"{self.saved.counter}.json")
+        print(f"Saved {self.saved.counter} changes")
+        self.saved.counter += 1
+
+    def save_index(self):
+        json.dump(self.saved.as_dict(), open(f"changes/index.json", "w"), indent=4)
+
+    def load_index(self):
+        if os.path.exists(f"changes/index.json"):
+            index = json.load(open(f"changes/index.json", "r"))
+            self.saved.start = index['start']
+            self.saved.end = index['end']
+            self.saved.commit = index['commit']
+            self.saved.counter = index['counter']
+            self.saved.data = index['data']
+
     def load_changes(self):
         # todo: load changes from files
+        self.load_index()
         git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse']
+        if self.saved.commit is not None:
+            git_args.append(f"{self.saved.commit}..HEAD")
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
         if c.returncode != 0:
             raise f"Failed to load changes({c.returncode}): {c.stderr}"
@@ -88,18 +152,9 @@ class Sky:
         lines = c.stdout.split('\n')
         print(f"Loaded {len(lines)} lines")
 
-        class State:
-            id = 0
-            date = None
-            commit = None
-            author = None
-            changed = []
-            removed = []
         s = State()
 
         current = None
-        changed_files = []
-        removed_files = []
         biggest = 0
 
         for l in lines:
@@ -107,52 +162,47 @@ class Sky:
             if len(l) == 0:
                 continue
             if l.startswith('='):
-                if len(changed_files) > 0 or len(removed_files) > 0:
-                    if current[2] is not None:
-                        # print(f"Adding {current[1]} by {current[2]}")
+                if len(s.changed) > 0 or len(s.removed) > 0:
+                    if s.author is not None:
                         self.changes.append({
                             "id": cnt,
-                            "date": current[0],
-                            "commit": current[1],
-                            "author": current[2],
-                            "flash": changed_files,
-                            "gone": removed_files
+                            "date": s.date,
+                            "commit": s.commit,
+                            "author": s.author,
+                            "on": s.changed,
+                            "off": s.removed
                             })
-                    size = len(changed_files) + len(removed_files)
-                    if size > biggest:
-                        biggest = size
-                        print(f"New biggest: {biggest} by {current[2]} at {current[0]}")
-                    removed_files = []
-                    changed_files = []
+                    self.save_changes()
                     cnt += 1
 
-                d = l[1:11]
-                cid = l[12:52]
-                author = l[53:].strip()
-                if "@" in author:
-                    author = author.split("@")[0]
-                    current = (d, cid, author)
+                s = State()
+                # format =2021-08-31 <commit - 40 chars> <author>
+                s.date = l[1:11]
+                s.commit = l[12:52]
+                s.author = l[53:].strip()
+                if "@" in s.author:
+                    s.author = s.author.split("@")[0]
                 else:
-                    current = (d, cid, None)
+                    s.author = None
             else:
                 fpath = l[2:].strip()
                 dname, fname = os.path.split(fpath)
                 if l.startswith('D'):
-                    removed_files.append(self.get_star(dname, fname).as_dict())
+                    s.removed.append(self.get_star(dname, fname).as_dict())
                 else:
-                    changed_files.append(self.get_star(dname, fname).as_dict())
+                    s.changed.append(self.get_star(dname, fname).as_dict())
 
-        if current[2] is not None:
-            # print(f"Adding {current[1]} by {current[2]}")
+        if s.author is not None:
             self.changes.append({
                 "id": cnt,
-                "date": current[0],
-                "commit": current[1],
-                "author": current[2],
-                "flash": changed_files,
-                "gone": removed_files
+                "date": s.date,
+                "commit": s.commit,
+                "author": s.author,
+                "on": s.changed,
+                "off": s.removed
                 })
-        json.dump(self.changes, open("changes.json", "w"), indent=4)
+        self.save_changes(force=True)
+        self.save_index()
 
 def get_history(root):
     git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse']
