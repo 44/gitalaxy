@@ -35,6 +35,19 @@ function fillCircle(ctx, x, y, r, fillStyle) {
   ctx.fill();
 }
 
+function getOpacity(factor) {
+  const opacityIncrement =
+    (maxStarOpacity - minStarOpacity) * Math.abs(Math.sin(factor));
+  const opacity = minStarOpacity + opacityIncrement;
+  return opacity;
+}
+
+function projectDate(ts) {
+    var diff = ts / 1000 * daysPerSecond;
+    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+    return curDate;
+}
+
 function renderMoon(ctx, blur, ts) {
   // fillCircle(ctx, moon.x, moon.y, moon.r, moon.color);
   // // render a smaller circle above the moon to give it that well-known moon-shape
@@ -48,24 +61,10 @@ function renderMoon(ctx, blur, ts) {
 
   // ctx.font = "30px Arial";
   // ctx.fillStyle = "white";
-  var diff = ts / 1000 * daysPerSecond;
-  var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+  var curDate = projectDate(ts);
   var cutoff = curDate.toISOString().substring(0, 10);
   // ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
-  document.getElementById("status").innerHTML = "Now: " + cutoff + " " + Object.keys(stars).length;
-}
-
-function getOpacity(factor) {
-  const opacityIncrement =
-    (maxStarOpacity - minStarOpacity) * Math.abs(Math.sin(factor));
-  const opacity = minStarOpacity + opacityIncrement;
-  return opacity;
-}
-
-function projectDate(ts) {
-    var diff = ts / 1000 * daysPerSecond;
-    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
-    return curDate;
+  document.getElementById("status").innerHTML = cutoff + " stars: " + Object.keys(stars).length;
 }
 
 function applyDecay(ts) {
