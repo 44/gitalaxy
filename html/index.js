@@ -22,6 +22,11 @@ function createStars(width, height, spacing) {
   return stars;
 }
 
+function initStars()
+{
+    return [];
+}
+
 function fillCircle(ctx, x, y, r, fillStyle) {
   ctx.beginPath();
   ctx.fillStyle = fillStyle;
@@ -79,7 +84,7 @@ const height = window.innerHeight;
 const maxStarRadius = 1.5;
 const minStarOpacity = 0.1;
 const maxStarOpacity = 0.7;
-const stars = createStars(width, height, 30);
+const stars = initStars(); // createStars(width, height, 30);
 const moon = {
   color: "#fea",
   x: height / 3,
@@ -94,6 +99,8 @@ canvas.height = height;
 
 let counter = 0;
 
+let all_changes = [];
+
 async function fetch_data()
 {
     const urlParams = new URLSearchParams(window.location.search);
@@ -106,6 +113,25 @@ async function fetch_data()
         const resp = await fetch(repoRoot + '/' + fname);
         const data = await resp.json();
         console.log(data.length);
+        all_changes = all_changes.concat(data);
+        if (stars.length < 5000)
+        {
+            for (const change of data)
+            {
+                for (const s of change.on)
+                {
+                      const star = {
+                        x: s.x * width / 256 / 256,
+                        y: s.y * height / 256 / 256,
+                        r: Math.random() * maxStarRadius
+                      };
+                      if (stars.length < 5000)
+                    {
+                      stars.push(star);
+                    }
+                }
+            }
+        }
     }
     return data;
 }
