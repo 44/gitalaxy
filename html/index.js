@@ -46,12 +46,13 @@ function renderMoon(ctx, blur, ts) {
   //   backgroundColor
   // );
 
-  ctx.font = "30px Arial";
-  ctx.fillStyle = "white";
+  // ctx.font = "30px Arial";
+  // ctx.fillStyle = "white";
   var diff = ts / 1000 * daysPerSecond;
   var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
   var cutoff = curDate.toISOString().substring(0, 10);
-  ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
+  // ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
+  document.getElementById("status").innerHTML = "Now: " + cutoff + " " + Object.keys(stars).length;
 }
 
 function getOpacity(factor) {
