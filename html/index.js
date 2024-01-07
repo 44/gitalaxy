@@ -7,7 +7,7 @@ var lastShown = 0;
 const daysPerSecond = 30;
 
 function createStars(width, height, spacing) {
-  const stars = [];
+  const stars = {};
 
   for (let x = 0; x < width; x += spacing) {
     for (let y = 0; y < height; y += spacing) {
@@ -16,7 +16,8 @@ function createStars(width, height, spacing) {
         y: y + randomInt(spacing),
         r: Math.random() * maxStarRadius
       };
-      stars.push(star);
+      const key = star.x.toString() + ":" + star.y.toString();
+      stars[key] = star;
     }
   }
   return stars;
@@ -24,7 +25,7 @@ function createStars(width, height, spacing) {
 
 function initStars()
 {
-    return [];
+    return {};
 }
 
 function fillCircle(ctx, x, y, r, fillStyle) {
@@ -51,7 +52,7 @@ function renderMoon(ctx, blur, ts) {
   lastShown = ts;
   var diff = lastShown / 1000 * daysPerSecond;
   var curDate = new Date(started.getTime() + diff * 24 * 60 * 60 * 1000);
-  ctx.fillText("Elapsed time: " + curDate.toISOString() + " " + stars.length, moon.x + 10, moon.y + 50);
+  ctx.fillText("Elapsed time: " + curDate.toISOString() + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
 }
 
 function getOpacity(factor) {
@@ -64,13 +65,16 @@ function getOpacity(factor) {
 function render(elapsed) {
   ctx.fillStyle = backgroundColor;
   ctx.clearRect(0, 0, width, height);
-  stars.forEach(function(star, i) {
-    const factor = counter * i;
-    const x = star.x;
-    const y = star.y;
-    const opacity = getOpacity(factor);
-    fillCircle(ctx, x, y, star.r, `rgba(255, 255, 255, ${opacity}`);
-  });
+  let cnt = 0;
+  for (const n in stars)
+  {
+      const star = stars[n];
+      const x = star.x;
+      const y = star.y;
+      const opacity = getOpacity(counter * cnt);
+      fillCircle(ctx, x, y, star.r, `rgba(255, 255, 255, ${opacity}`);
+      cnt++;
+  }
 
   renderMoon(ctx, 0, elapsed);
 
@@ -114,7 +118,7 @@ async function fetch_data()
         const data = await resp.json();
         console.log(data.length);
         all_changes = all_changes.concat(data);
-        if (stars.length < 5000)
+        if (Object.keys(stars).length < 5000)
         {
             for (const change of data)
             {
@@ -125,9 +129,11 @@ async function fetch_data()
                         y: s.y * height / 256 / 256,
                         r: Math.random() * maxStarRadius
                       };
-                      if (stars.length < 5000)
+                      if (Object.keys(stars).length < 5000)
                     {
-                      stars.push(star);
+                        console.log("pushing");
+                        const key = star.x.toString() + ":" + star.y.toString();
+                        stars[key] = star;
                     }
                 }
             }
