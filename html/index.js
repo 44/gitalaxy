@@ -4,7 +4,7 @@ function randomInt(max) {
 
 const started = new Date();
 var lastShown = 0;
-const daysPerSecond = 30;
+const daysPerSecond = 7;
 
 function createStars(width, height, spacing) {
   const stars = {};
@@ -92,6 +92,20 @@ function applyDecay(curDate) {
     }
 }
 
+function assignColor(entry) {
+    if (entry.c == "test")
+    {
+        return "196,255,196";
+    } else if ((entry.c == "strings") || (entry.c == "omc") || (entry.c == "lcl")) {
+        return "255,196,196";
+    } else if (entry.c.includes("proj") || entry.c.includes("filters")) {
+        return "196,196,255";
+    } else if (entry.c == "h") {
+        return "255,255,196";
+    }
+    return "255,255,255";
+}
+
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
@@ -144,14 +158,17 @@ function updateStars(ts) {
                     h: 1, // hits
                     d: 0, // decay
                     ld: curDate, // last decay
+                    c: assignColor(s),
                 };
                 stars[key] = star;
             }
         }
-        for (const s of change.off) {
-            const key = s.x.toString() + ":" + s.y.toString();
-            if (key in stars) {
-                state.removeQueue.add(key);
+        if (false) { // do not remove right away, let them decay
+            for (const s of change.off) {
+                const key = s.x.toString() + ":" + s.y.toString();
+                if (key in stars) {
+                    state.removeQueue.add(key);
+                }
             }
         }
         state.nextChangeToProcess = i + 1;
@@ -184,7 +201,6 @@ function render(ts) {
       const star = stars[n];
       const x = star.x;
       const y = star.y;
-      const opacity = (cnt % 20 == blip) ? 0.5 : 1; //getOpacity(counter * cnt);
       let r = star.h - star.d / 10;
       if (r > max_hits)
       {
@@ -203,7 +219,9 @@ function render(ts) {
       else if (r > 10) {
           radius = 1;
       }
-      fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
+      const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
+      // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
+      fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
       cnt++;
   }
 
