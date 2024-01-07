@@ -48,10 +48,9 @@ function renderMoon(ctx, blur, ts) {
 
   ctx.font = "30px Arial";
   ctx.fillStyle = "white";
-  var elapsed = ts - lastShown;
-  lastShown = ts;
-  var diff = lastShown / 1000 * daysPerSecond;
-  var curDate = new Date(started.getTime() + diff * 24 * 60 * 60 * 1000);
+  state.lastTs = ts;
+  var diff = ts / 1000 * daysPerSecond;
+  var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
   ctx.fillText("Elapsed time: " + curDate.toISOString() + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
 }
 
@@ -105,6 +104,7 @@ let counter = 0;
 
 let all_changes = [];
 
+let state = {};
 async function fetch_data()
 {
     const urlParams = new URLSearchParams(window.location.search);
@@ -131,7 +131,6 @@ async function fetch_data()
                       };
                       if (Object.keys(stars).length < 5000)
                     {
-                        console.log("pushing");
                         const key = star.x.toString() + ":" + star.y.toString();
                         stars[key] = star;
                     }
@@ -144,6 +143,15 @@ async function fetch_data()
 
 fetch_data().then(data => {
     console.log(data);
+    state = {
+        lastTs: 0,
+        start: new Date(),
+        end: new Date(),
+        processed: 0,
+    };
+    state.start.setTime(Date.parse(data.start));
+    state.end.setTime(Date.parse(data.end));
+    console.log(state);
     render(0);
 });
 
