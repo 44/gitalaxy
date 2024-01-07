@@ -4,7 +4,7 @@ function randomInt(max) {
 
 const started = new Date();
 var lastShown = 0;
-const daysPerSecond = 30;
+const daysPerSecond = 7;
 
 function createStars(width, height, spacing) {
   const stars = {};
@@ -48,10 +48,10 @@ function renderMoon(ctx, blur, ts) {
 
   ctx.font = "30px Arial";
   ctx.fillStyle = "white";
-  state.lastTs = ts;
   var diff = ts / 1000 * daysPerSecond;
   var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
-  ctx.fillText("Elapsed time: " + curDate.toISOString() + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
+  var cutoff = curDate.toISOString().substring(0, 10);
+  ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
 }
 
 function getOpacity(factor) {
@@ -61,7 +61,56 @@ function getOpacity(factor) {
   return opacity;
 }
 
-function render(elapsed) {
+function updateStars(ts) {
+    let decayDiff = (ts - state.lastTs) / 1000 * daysPerSecond;
+    let decay = decayDiff * 0.005;
+    for (const n in stars)
+    {
+        const star = stars[n];
+        star.r -= decay;
+        if (star.r < 0.001)
+        {
+            delete stars[n];
+        }
+    }
+
+    state.lastTs = ts;
+    var diff = ts / 1000 * daysPerSecond;
+    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+    var cutoff = curDate.toISOString().substring(0, 10);
+    for (let i = state.processed; i < all_changes.length; i++) {
+        const change = all_changes[i];
+        if (change.date > cutoff) {
+            break;
+        }
+        state.processed = i;
+        for (const s of change.on) {
+            const key = s.x.toString() + ":" + s.y.toString();
+            if (key in stars) {
+                stars[key].r += 0.01;
+                if (stars[key].r > 3) {
+                    stars[key].r = 3;
+                }
+            } else {
+                const star = {
+                    x: s.x * width / 256 / 256,
+                    y: s.y * height / 256 / 256,
+                    r: 1.0,
+                };
+                stars[key] = star;
+            }
+        }
+        for (const s of change.off) {
+            const key = s.x.toString() + ":" + s.y.toString();
+            if (key in stars) {
+                delete stars[key];
+            }
+        }
+    }
+}
+
+function render(ts) {
+  updateStars(ts);
   ctx.fillStyle = backgroundColor;
   ctx.clearRect(0, 0, width, height);
   let cnt = 0;
@@ -75,7 +124,7 @@ function render(elapsed) {
       cnt++;
   }
 
-  renderMoon(ctx, 0, elapsed);
+  renderMoon(ctx, 0, ts);
 
   counter++;
   requestAnimationFrame(render);
@@ -118,25 +167,25 @@ async function fetch_data()
         const data = await resp.json();
         console.log(data.length);
         all_changes = all_changes.concat(data);
-        if (Object.keys(stars).length < 5000)
-        {
-            for (const change of data)
-            {
-                for (const s of change.on)
-                {
-                      const star = {
-                        x: s.x * width / 256 / 256,
-                        y: s.y * height / 256 / 256,
-                        r: Math.random() * maxStarRadius
-                      };
-                      if (Object.keys(stars).length < 5000)
-                    {
-                        const key = star.x.toString() + ":" + star.y.toString();
-                        stars[key] = star;
-                    }
-                }
-            }
-        }
+        // if (Object.keys(stars).length < 5000)
+        // {
+        //     for (const change of data)
+        //     {
+        //         for (const s of change.on)
+        //         {
+        //               const star = {
+        //                 x: s.x * width / 256 / 256,
+        //                 y: s.y * height / 256 / 256,
+        //                 r: Math.random() * maxStarRadius
+        //               };
+        //               if (Object.keys(stars).length < 5000)
+        //             {
+        //                 const key = star.x.toString() + ":" + star.y.toString();
+        //                 stars[key] = star;
+        //             }
+        //         }
+        //     }
+        // }
     }
     return data;
 }
