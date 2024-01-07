@@ -4,7 +4,7 @@ function randomInt(max) {
 
 const started = new Date();
 var lastShown = 0;
-const daysPerSecond = 7;
+const daysPerSecond = 30;
 
 function createStars(width, height, spacing) {
   const stars = {};
@@ -61,7 +61,42 @@ function getOpacity(factor) {
   return opacity;
 }
 
+function projectDate(ts) {
+    var diff = ts / 1000 * daysPerSecond;
+    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+    return curDate;
+}
+
+function applyDecay(ts) {
+    for (const n in stars)
+    {
+        const star = stars[n];
+        const daysFromLastHit = (ts - star.l) / 1000 * daysPerSecond;
+        if (daysFromLastHit < 30)
+        {
+            continue;
+        }
+        const daysFromLastDecay = Math.floor((ts - star.ld) / 1000 * daysPerSecond);
+        if (daysFromLastDecay < 1)
+        {
+            continue;
+        }
+        star.d += daysFromLastDecay;
+        star.ld = ts;
+
+        if (star.d > star.h * 10)
+        {
+            delete stars[n];
+        }
+    }
+}
+
 function updateStars(ts) {
+    var curDate = projectDate(ts);
+    var lastDate = projectDate(state.lastTs);
+    applyDecay(ts);
+
+    /*
     let decayDiff = (ts - state.lastTs) / 1000 * daysPerSecond;
     let decay = decayDiff * 0.01;
     for (const n in stars)
@@ -78,10 +113,10 @@ function updateStars(ts) {
             delete stars[n];
         }
     }
+    */
 
     state.lastTs = ts;
-    var diff = ts / 1000 * daysPerSecond;
-    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+
     var cutoff = curDate.toISOString().substring(0, 10);
     for (let i = state.processed; i < all_changes.length; i++) {
         const change = all_changes[i];
@@ -95,16 +130,20 @@ function updateStars(ts) {
                 stars[key].r += 0.01;
                 stars[key].l = ts;
                 stars[key].h++;
+                stars[key].ld = ts;
                 if (stars[key].r > 3) {
                     stars[key].r = 3;
                 }
             } else {
                 const star = {
+                    n: s.fname,
                     x: s.x * width / 256 / 256,
                     y: s.y * height / 256 / 256,
-                    r: 1.0,
-                    l: ts,
-                    h: 1,
+                    r: 1.0, // radius - should be calculated from the number of hits and decay
+                    l: ts, // last hit
+                    h: 1, // hits
+                    d: 0, // decay
+                    ld: ts, // last decay
                 };
                 stars[key] = star;
             }
@@ -118,18 +157,39 @@ function updateStars(ts) {
     }
 }
 
+let max_hits = 0;
+
 function render(ts) {
   updateStars(ts);
   ctx.fillStyle = backgroundColor;
   ctx.clearRect(0, 0, width, height);
   let cnt = 0;
+  const blip = counter % 10;
   for (const n in stars)
   {
       const star = stars[n];
       const x = star.x;
       const y = star.y;
-      const opacity = getOpacity(counter * cnt);
-      fillCircle(ctx, x, y, star.r, `rgba(255, 255, 255, ${opacity})`);
+      const opacity = (cnt % 20 == blip) ? 0.5 : 1; //getOpacity(counter * cnt);
+      let r = star.h - star.d / 10;
+      if (r > max_hits)
+      {
+          max_hits = r;
+          // console.log(max_hits, star.n);
+      }
+      let radius = 0.5;
+      if (r > 1000)
+      {
+          radius = 2;
+      }
+      else if (r > 100)
+      {
+          radius = 1.5;
+      }
+      else if (r > 10) {
+          radius = 1;
+      }
+      fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
       cnt++;
   }
 
