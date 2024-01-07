@@ -124,7 +124,7 @@ function updateStars(ts) {
         if (change.date > cutoff) {
             break;
         }
-        state.processed = i;
+        console.log(`have change ${change.date} ${i} of ${all_changes.length}`);
         for (const s of change.on) {
             const key = s.x.toString() + ":" + s.y.toString();
             if (key in stars) {
@@ -155,6 +155,7 @@ function updateStars(ts) {
                 delete stars[key];
             }
         }
+        state.processed = i + 1;
     }
 }
 
