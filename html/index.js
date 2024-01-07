@@ -36,15 +36,15 @@ function fillCircle(ctx, x, y, r, fillStyle) {
 }
 
 function renderMoon(ctx, blur, ts) {
-  fillCircle(ctx, moon.x, moon.y, moon.r, moon.color);
-  // render a smaller circle above the moon to give it that well-known moon-shape
-  fillCircle(
-    ctx,
-    moon.x - moon.r / 3,
-    moon.y - moon.r / 3,
-    moon.r,
-    backgroundColor
-  );
+  // fillCircle(ctx, moon.x, moon.y, moon.r, moon.color);
+  // // render a smaller circle above the moon to give it that well-known moon-shape
+  // fillCircle(
+  //   ctx,
+  //   moon.x - moon.r / 3,
+  //   moon.y - moon.r / 3,
+  //   moon.r,
+  //   backgroundColor
+  // );
 
   ctx.font = "30px Arial";
   ctx.fillStyle = "white";
@@ -63,10 +63,15 @@ function getOpacity(factor) {
 
 function updateStars(ts) {
     let decayDiff = (ts - state.lastTs) / 1000 * daysPerSecond;
-    let decay = decayDiff * 0.005;
+    let decay = decayDiff * 0.01;
     for (const n in stars)
     {
         const star = stars[n];
+        const delay = (ts - star.l) / 1000 * daysPerSecond;
+        if (delay < 30)
+        {
+            continue;
+        }
         star.r -= decay;
         if (star.r < 0.001)
         {
@@ -88,6 +93,8 @@ function updateStars(ts) {
             const key = s.x.toString() + ":" + s.y.toString();
             if (key in stars) {
                 stars[key].r += 0.01;
+                stars[key].l = ts;
+                stars[key].h++;
                 if (stars[key].r > 3) {
                     stars[key].r = 3;
                 }
@@ -96,6 +103,8 @@ function updateStars(ts) {
                     x: s.x * width / 256 / 256,
                     y: s.y * height / 256 / 256,
                     r: 1.0,
+                    l: ts,
+                    h: 1,
                 };
                 stars[key] = star;
             }
@@ -120,7 +129,7 @@ function render(ts) {
       const x = star.x;
       const y = star.y;
       const opacity = getOpacity(counter * cnt);
-      fillCircle(ctx, x, y, star.r, `rgba(255, 255, 255, ${opacity}`);
+      fillCircle(ctx, x, y, star.r, `rgba(255, 255, 255, ${opacity})`);
       cnt++;
   }
 
