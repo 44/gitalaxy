@@ -35,6 +35,14 @@
         background-blend-mode: multiply;
         opacity: 1;
       }
+      @font-face {
+        font-family: repoFont;
+        src: url('./StarshineMF.ttf');
+      }
+      @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+      }
       #flash {
         position: absolute;
         width: 100%;
@@ -45,16 +53,17 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-      }
-      @font-face {
-        font-family: repoFont;
-        src: url('./StarshineMF.ttf');
+        animation-duration: 3s;
+        animation-fill-mode: forwards;
       }
       h1 {
           color: #123;
           text-shadow: 0 0 3px #ffc, 0 0 10px #ffc, 0 0 20px #ffc;
           font-family: repoFont;
           font-size: 10em;
+      }
+      .fadeOut {
+        animation-name: fadeOut;
       }
     </style>
   </head>

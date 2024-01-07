@@ -75,6 +75,16 @@ class Sky:
         self.changes = []
         self.saved = SavedState()
 
+    def get_repo_name(self):
+        git_args = ['git', 'remote', 'get-url', 'origin']
+        c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
+        if c.returncode != 0:
+            return os.path.basename(self.root)
+        name = os.path.basename(c.stdout.strip())
+        if name.endswith(".git"):
+            name = name[:-4]
+        return name
+
     def load_galaxies(self):
         git_args = ['git', 'ls-files']
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
@@ -126,7 +136,9 @@ class Sky:
         self.saved.counter += 1
 
     def save_index(self):
-        json.dump(self.saved.as_dict(), open(f"changes/index.json", "w"), indent=4)
+        idx = self.saved.as_dict()
+        idx["name"] = self.get_repo_name()
+        json.dump(idx, open(f"changes/index.json", "w"), indent=4)
 
     def load_index(self):
         if os.path.exists(f"changes/index.json"):
@@ -137,8 +149,7 @@ class Sky:
             self.saved.counter = index['counter']
             self.saved.data = index['data']
 
-    def load_changes(self):
-        # todo: load changes from files
+    def generate_changes(self):
         self.load_index()
         git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse']
         if self.saved.commit is not None:
@@ -210,4 +221,4 @@ if __name__ == "__main__":
     import math
     for d, s in sorted(sky.galaxies.items(), key=lambda x: x[1].size, reverse=False):
         print(d, s.size, int(math.log(s.size, 4) + 1), s.x, s.y)
-    sky.load_changes()
+    sky.generate_changes()

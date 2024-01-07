@@ -170,32 +170,16 @@ async function fetch_data()
     const resp = await fetch(repoRoot + '/index.json');
     console.log(resp);
     const data = await resp.json();
+    window.document.getElementById("repo").innerHTML = data.name;
     for (const fname of data.data)
     {
+        window.document.getElementById("progress").innerHTML = "Loading " + fname + "...";
         const resp = await fetch(repoRoot + '/' + fname);
         const data = await resp.json();
         console.log(data.length);
         all_changes = all_changes.concat(data);
-        // if (Object.keys(stars).length < 5000)
-        // {
-        //     for (const change of data)
-        //     {
-        //         for (const s of change.on)
-        //         {
-        //               const star = {
-        //                 x: s.x * width / 256 / 256,
-        //                 y: s.y * height / 256 / 256,
-        //                 r: Math.random() * maxStarRadius
-        //               };
-        //               if (Object.keys(stars).length < 5000)
-        //             {
-        //                 const key = star.x.toString() + ":" + star.y.toString();
-        //                 stars[key] = star;
-        //             }
-        //         }
-        //     }
-        // }
     }
+    window.document.getElementById("progress").innerHTML = "Starting...";
     return data;
 }
 
@@ -210,6 +194,10 @@ fetch_data().then(data => {
     state.start.setTime(Date.parse(data.start));
     state.end.setTime(Date.parse(data.end));
     console.log(state);
-    render(0);
+    window.document.getElementById("progress").innerHTML = "Rendering...";
+    window.document.getElementById("flash").classList.add("fadeOut");
+    setInterval(() => {
+        render(0);
+    }, 2000);
 });
 
