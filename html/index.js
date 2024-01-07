@@ -87,7 +87,7 @@ function applyDecay(curDate) {
 
         if (star.d > star.h * 10)
         {
-            delete stars[n];
+            state.removeQueue.add(n);
         }
     }
 }
@@ -118,13 +118,12 @@ function updateStars(ts) {
 
     state.lastTs = ts;
 
-    var cutoff = curDate.toISOString().substring(0, 10);
-    for (let i = state.processed; i < all_changes.length; i++) {
+    let cutoff = curDate.toISOString().substring(0, 10);
+    for (let i = state.nextChangeToProcess; i < all_changes.length; i++) {
         const change = all_changes[i];
         if (change.date > cutoff) {
             break;
         }
-        console.log(`have change ${change.date} ${i} of ${all_changes.length}`);
         for (const s of change.on) {
             const key = s.x.toString() + ":" + s.y.toString();
             if (key in stars) {
@@ -152,10 +151,23 @@ function updateStars(ts) {
         for (const s of change.off) {
             const key = s.x.toString() + ":" + s.y.toString();
             if (key in stars) {
-                delete stars[key];
+                state.removeQueue.add(key);
             }
         }
-        state.processed = i + 1;
+        state.nextChangeToProcess = i + 1;
+    }
+
+    let deleted = 0;
+    state.removeQueue.forEach(key => {
+        if (deleted < 100) {
+            delete stars[key];
+            state.removeQueue.delete(key);
+            deleted++;
+        }
+    });
+
+    if (state.removeQueue.size > 0) {
+        console.log(`remove queue set: ${state.removeQueue.size}`);
     }
 }
 
@@ -251,7 +263,8 @@ fetch_data().then(data => {
         lastTs: 0,
         start: new Date(),
         end: new Date(),
-        processed: 0,
+        nextChangeToProcess: 0,
+        removeQueue: new Set(),
     };
     state.start.setTime(Date.parse(data.start));
     state.end.setTime(Date.parse(data.end));
