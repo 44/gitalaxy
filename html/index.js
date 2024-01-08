@@ -110,26 +110,10 @@ function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
     const frameTime= (ts - state.lastTs);
-    applyDecay(curDate);
-
-    /*
-    let decayDiff = (ts - state.lastTs) / 1000 * daysPerSecond;
-    let decay = decayDiff * 0.01;
-    for (const n in stars)
+    if (state.stars > 3000)
     {
-        const star = stars[n];
-        const delay = (ts - star.l) / 1000 * daysPerSecond;
-        if (delay < 30)
-        {
-            continue;
-        }
-        star.r -= decay;
-        if (star.r < 0.001)
-        {
-            delete stars[n];
-        }
+        applyDecay(curDate);
     }
-    */
 
     state.lastTs = ts;
 
@@ -162,6 +146,7 @@ function updateStars(ts) {
                     c: assignColor(s),
                 };
                 stars[key] = star;
+                state.stars++;
             }
         }
         if (true) { // do not remove right away, let them decay
@@ -173,6 +158,7 @@ function updateStars(ts) {
             }
         }
         state.nextChangeToProcess = i + 1;
+        // console.log("processed:", i, change.date, change.on.length, change.off.length);
     }
 
     const allowedDeletes = 500 * frameTime / 1000 * daysPerSecond;
@@ -182,13 +168,10 @@ function updateStars(ts) {
         if (deleted < allowedDeletes) {
             delete stars[key];
             state.removeQueue.delete(key);
+            state.stars--;
             deleted++;
         }
     });
-
-    // if (state.removeQueue.size > 0) {
-    //     console.log(`remove queue set: ${state.removeQueue.size} allowed: ${allowedDeletes} deleted: ${deleted} frameTime: ${frameTime}`);
-    // }
 }
 
 function drawStar(ctx, x, y, c) {
@@ -315,6 +298,7 @@ fetch_data().then(data => {
         end: new Date(),
         nextChangeToProcess: 0,
         removeQueue: new Set(),
+        stars: 0,
     };
     state.start.setTime(Date.parse(data.start));
     state.end.setTime(Date.parse(data.end));
@@ -326,7 +310,7 @@ fetch_data().then(data => {
     }, 2000);
 });
 
-document.addEventListener("keyup", event => {
+document.addEventListener("keydown", event => {
     const keyName = event.key;
     if (keyName == "0")
     {
@@ -337,5 +321,7 @@ document.addEventListener("keyup", event => {
         daysPerSecond = 7;
     } else if (keyName == "3") {
         daysPerSecond = 30;
+    } else if (keyName == "h") {
+        document.getElementById("help").classList.toggle("fadeIn");
     }
 });
