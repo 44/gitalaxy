@@ -4,7 +4,7 @@ function randomInt(max) {
 
 const started = new Date();
 var lastShown = 0;
-const daysPerSecond = 7;
+let daysPerSecond = 7;
 
 function createStars(width, height, spacing) {
   const stars = {};
@@ -64,7 +64,7 @@ function renderMoon(ctx, blur, ts) {
   var curDate = projectDate(ts);
   var cutoff = curDate.toISOString().substring(0, 10);
   // ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
-  document.getElementById("status").innerHTML = cutoff + " stars: " + Object.keys(stars).length;
+  document.getElementById("status").innerHTML = cutoff + " stars: " + Object.keys(stars).length + " speed:" + daysPerSecond + " days/second";
 }
 
 function applyDecay(curDate) {
@@ -294,3 +294,16 @@ fetch_data().then(data => {
     }, 2000);
 });
 
+document.addEventListener("keyup", event => {
+    const keyName = event.key;
+    if (keyName == "0")
+    {
+        daysPerSecond = 0;
+    } else if (keyName == "1") {
+        daysPerSecond = 1;
+    } else if (keyName == "2") {
+        daysPerSecond = 7;
+    } else if (keyName == "3") {
+        daysPerSecond = 30;
+    }
+});
