@@ -109,6 +109,7 @@ function assignColor(entry) {
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
+    const frameTime= (ts - state.lastTs);
     applyDecay(curDate);
 
     /*
@@ -163,7 +164,7 @@ function updateStars(ts) {
                 stars[key] = star;
             }
         }
-        if (false) { // do not remove right away, let them decay
+        if (true) { // do not remove right away, let them decay
             for (const s of change.off) {
                 const key = s.x.toString() + ":" + s.y.toString();
                 if (key in stars) {
@@ -174,9 +175,11 @@ function updateStars(ts) {
         state.nextChangeToProcess = i + 1;
     }
 
+    const allowedDeletes = 500 * frameTime / 1000 * daysPerSecond;
+
     let deleted = 0;
     state.removeQueue.forEach(key => {
-        if (deleted < 100) {
+        if (deleted < allowedDeletes) {
             delete stars[key];
             state.removeQueue.delete(key);
             deleted++;
@@ -184,7 +187,7 @@ function updateStars(ts) {
     });
 
     if (state.removeQueue.size > 0) {
-        console.log(`remove queue set: ${state.removeQueue.size}`);
+        console.log(`remove queue set: ${state.removeQueue.size} allowed: ${allowedDeletes} deleted: ${deleted} frameTime: ${frameTime}`);
     }
 }
 
