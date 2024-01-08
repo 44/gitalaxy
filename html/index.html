@@ -7,6 +7,7 @@
       html {
         padding: 0;
         margin: 0;
+        overflow: hidden;
       }
       #bg {
         position: absolute;
@@ -28,8 +29,8 @@
         position: absolute;
         left: 100px;
         top: 100px;
-        width: 500px;
-        height: 500px;
+        width: 50px;
+        height: 50px;
         z-index: 300;
         background-image: url(./full-moon.png);
         background-repeat: no-repeat;
@@ -101,7 +102,9 @@
         <div id="status"></div>
     </div>
     <canvas id="canvas"></canvas>
-    <div id="moon"></div>
+    <div style="display:none">
+        <img id="moon" src="./full-moon.png" width="50" height="50" />
+    </div>
     <div id="flash">
         <h1 id="repo">OneDrive.Client</h1>
         <div id="progress">Loading...</div>

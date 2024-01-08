@@ -49,6 +49,54 @@ function projectDate(ts) {
 }
 
 function renderMoon(ctx, blur, ts) {
+    if (moonReady) {
+        const toCross = 500 * 1000;
+        const rts = ts % toCross;
+        let x = rts * (width + 200) / toCross;
+        let a = height/2 - 50;
+        a = a / (width/2 + 100);
+        a = a / (width/2 + 100);
+        const b = width/2 + 100;
+        const c = 50;
+        const y = a * (x - b) * (x - b) + c;
+        // console.log('mooo', x, y, a, b, c, width, height);
+        ctx.drawImage(moonImage, Math.floor(x), Math.floor(y), 30, 30);
+
+
+        // y = a * (x - b)^2 + 50;
+        // c = 50
+        // b = w/2 + 100
+        //
+        // h/2 = a * (0 - w/2 - 100)^2 + 50;
+        // a= (h/2 - 50)/(w/2 + 100)^2
+        //
+        //
+        // 1) x = 0, y = height/2
+        //
+        // -> height/2 = c;
+        //
+        // 2) x = width/2 + 100, y = 50
+        //
+        // -> 50 = a * (width/2 + 100)^2 + b * (width/2 + 100) + h/2
+        // -> b = (50 - h/w - a *(w/2+100)^2)/(w/2+100)
+        //
+        // 3) x = w+200, y = h/2
+        //
+        // -> 0 = a * (w+200)^2 + b * (w+200)
+        // -> a = -b/(w+200)
+        //
+        // -> b = (50 - h/w + b/(w+200)*(w+200)^2)/(w/2+100)
+        //
+        //
+        //
+        //
+    }
+  // const period = 30;
+  // var x = Math.floor(ts / 1000 * width / period) % (width + 200);
+  // var y = Math.floor(height/3 - height / 3 * ts / 1000 / period / 2) % Math.floor(height / 3);
+  // document.getElementById("moon").style.left = `${x}px`;
+  // document.getElementById("moon").style.top = `${y}px`;
+  // document.getElementById("moon").top = 
   // fillCircle(ctx, moon.x, moon.y, moon.r, moon.color);
   // // render a smaller circle above the moon to give it that well-known moon-shape
   // fillCircle(
@@ -110,10 +158,7 @@ function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
     const frameTime= (ts - state.lastTs);
-    if (state.stars > 3000)
-    {
-        applyDecay(curDate);
-    }
+    applyDecay(curDate);
 
     state.lastTs = ts;
 
@@ -288,6 +333,19 @@ async function fetch_data()
     }
     window.document.getElementById("progress").innerHTML = "Starting...";
     return data;
+}
+
+const moonImage = document.getElementById("moon");
+let moonReady = false;
+
+if (moonImage.complete) {
+    moonReady = true;
+    console.log("complete");
+} else{
+    moonImage.addEventListener("load", () => {
+        moonReady = true;
+        console.log("loaded");
+    });
 }
 
 fetch_data().then(data => {
