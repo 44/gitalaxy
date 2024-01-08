@@ -186,12 +186,28 @@ function updateStars(ts) {
         }
     });
 
-    if (state.removeQueue.size > 0) {
-        console.log(`remove queue set: ${state.removeQueue.size} allowed: ${allowedDeletes} deleted: ${deleted} frameTime: ${frameTime}`);
-    }
+    // if (state.removeQueue.size > 0) {
+    //     console.log(`remove queue set: ${state.removeQueue.size} allowed: ${allowedDeletes} deleted: ${deleted} frameTime: ${frameTime}`);
+    // }
 }
 
-let max_hits = 0;
+function drawStar(ctx, x, y, c) {
+    ctx.fillStyle = `rgb(${c})`;
+    const axes = [4,4,4,4];
+    const update = randomInt(4);
+    axes[update] = 6;
+    ctx.beginPath();
+    ctx.moveTo(x, y + axes[0]);
+    ctx.lineTo(x + 1, y + 1);
+    ctx.lineTo(x + axes[1], y);
+    ctx.lineTo(x + 1, y - 1);
+    ctx.lineTo(x, y - axes[2]);
+    ctx.lineTo(x - 1, y - 1);
+    ctx.lineTo(x - axes[3], y);
+    ctx.lineTo(x - 1, y + 1);
+    ctx.closePath();
+    ctx.fill();
+}
 
 function render(ts) {
   updateStars(ts);
@@ -199,16 +215,22 @@ function render(ts) {
   ctx.clearRect(0, 0, width, height);
   let cnt = 0;
   const blip = counter % 10;
+  const brighest = [];
   for (const n in stars)
   {
       const star = stars[n];
       const x = star.x;
       const y = star.y;
       let r = star.h - star.d / 10;
-      if (r > max_hits)
+      if (brighest.length < 5)
       {
-          max_hits = r;
-          // console.log(max_hits, star.n);
+          brighest.push({r: r, c: star});
+          brighest.sort((a, b) => a.r - b.r);
+      }
+      else if (r > brighest[0].r)
+      {
+          brighest[0] = {r: r, c: star};
+          brighest.sort((a, b) => a.r - b.r);
       }
       let radius = 0.5;
       if (r > 1000)
@@ -226,6 +248,13 @@ function render(ts) {
       // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
       fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
       cnt++;
+  }
+
+  for (let i = 0; i < brighest.length; i++)
+  {
+      const star = brighest[i].c;
+      drawStar(ctx, star.x, star.y, star.c);
+      // console.log("brightest:", i, star.n, brighest[i].r);
   }
 
   renderMoon(ctx, 0, ts);
