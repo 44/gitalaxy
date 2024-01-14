@@ -109,10 +109,6 @@ function renderMoon(ctx, blur, ts) {
 
   // ctx.font = "30px Arial";
   // ctx.fillStyle = "white";
-  var curDate = projectDate(ts);
-  var cutoff = curDate.toISOString().substring(0, 10);
-  // ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
-  document.getElementById("status").innerHTML = cutoff + " stars: " + state.stars + " speed:" + daysPerSecond + " days/second " + state.message;
 }
 
 function applyDecay(curDate) {
@@ -154,13 +150,37 @@ function assignColor(entry) {
     return "255,255,255";
 }
 
+let lastShownStatus = "";
+
+function updateStatus(curDate) {
+    let cutoff = curDate.toISOString().substring(0, 10);
+    let statusMessage = cutoff;
+    if (daysPerSecond == 0) {
+        statusMessage += " \udb80\udfe6 paused";
+    } else if (daysPerSecond == 1) {
+        statusMessage += " \udb83\udf86 d/s";
+    } else if (daysPerSecond == 7) {
+        statusMessage += " \udb83\udf85 w/s";
+    } else if (daysPerSecond == 30) {
+        statusMessage += " \udb81\udcc5 m/s";
+    }
+    if (lastShownStatus != statusMessage)
+    {
+        document.getElementById("status").innerHTML = statusMessage;
+    }
+}
+
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
+    updateStatus(curDate);
     if (curDate.getDate() == lastDate.getDate())
     {
         return;
     }
+
+    let cutoff = curDate.toISOString().substring(0, 10);
+
     const frameTime= (ts - state.lastTs);
     applyDecay(curDate);
 
@@ -169,7 +189,6 @@ function updateStars(ts) {
     let removed = 0;
     let added = 0;
 
-    let cutoff = curDate.toISOString().substring(0, 10);
     for (let i = state.nextChangeToProcess; i < all_changes.length; i++) {
         const change = all_changes[i];
         if (change.date > cutoff) {
