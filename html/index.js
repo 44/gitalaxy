@@ -25,7 +25,7 @@ function createStars(width, height, spacing) {
 
 function initStars()
 {
-    return {};
+    return new Map();
 }
 
 function fillCircle(ctx, x, y, r, fillStyle) {
@@ -112,13 +112,13 @@ function renderMoon(ctx, blur, ts) {
   var curDate = projectDate(ts);
   var cutoff = curDate.toISOString().substring(0, 10);
   // ctx.fillText("Now: " + cutoff + " " + Object.keys(stars).length, moon.x + 10, moon.y + 50);
-  document.getElementById("status").innerHTML = cutoff + " stars: " + Object.keys(stars).length + " speed:" + daysPerSecond + " days/second";
+  document.getElementById("status").innerHTML = cutoff + " stars: " + state.stars + " speed:" + daysPerSecond + " days/second " + state.message;
 }
 
 function applyDecay(curDate) {
-    for (const n in stars)
+    for (let n of stars.keys())
     {
-        const star = stars[n];
+        const star = stars.get(n);
         const daysFromLastHit = Math.floor((curDate.getTime() - star.l.getTime()) / 1000 / 60 / 60 / 24);
         if (daysFromLastHit < 30)
         {
@@ -165,6 +165,9 @@ function updateStars(ts) {
     applyDecay(curDate);
 
     state.lastTs = ts;
+    let changed = 0;
+    let removed = 0;
+    let added = 0;
 
     let cutoff = curDate.toISOString().substring(0, 10);
     for (let i = state.nextChangeToProcess; i < all_changes.length; i++) {
@@ -172,16 +175,19 @@ function updateStars(ts) {
         if (change.date > cutoff) {
             break;
         }
+        state.message = " ";
         for (const s of change.on) {
             const key = s.x.toString() + ":" + s.y.toString();
-            if (key in stars) {
-                stars[key].r += 0.01;
-                stars[key].l = curDate;
-                stars[key].h++;
-                stars[key].ld = curDate;
-                if (stars[key].r > 3) {
-                    stars[key].r = 3;
+            if (stars.has(key)) {
+                const star = stars.get(key);
+                star.r += 0.01;
+                star.l = curDate;
+                star.h++;
+                star.ld = curDate;
+                if (star.r > 3) {
+                    star.r = 3;
                 }
+                changed++;
             } else {
                 const star = {
                     n: s.fname,
@@ -194,14 +200,15 @@ function updateStars(ts) {
                     ld: curDate, // last decay
                     c: assignColor(s),
                 };
-                stars[key] = star;
+                stars.set(key, star);
                 state.stars++;
+                added++;
             }
         }
         if (true) { // do not remove right away, let them decay
             for (const s of change.off) {
                 const key = s.x.toString() + ":" + s.y.toString();
-                if (key in stars) {
+                if (stars.has(key)) {
                     state.removeQueue.add(key);
                 }
             }
@@ -215,12 +222,21 @@ function updateStars(ts) {
     let deleted = 0;
     state.removeQueue.forEach(key => {
         if (deleted < allowedDeletes) {
-            delete stars[key];
+            if (!stars.delete(key) ) {
+                console.log("failed to delete", key);
+            }
             state.removeQueue.delete(key);
             state.stars--;
             deleted++;
+            removed++;
         }
     });
+    state.message = "changed: " + changed + " added: " + added + " removed: " + removed;
+    if ( (curDate.getFullYear() - state.end.getFullYear()) > 0)
+    {
+        console.log("auto-restart requested:" + (curDate.getTime()  - state.end.getTime()));
+        state.restart = true;
+    }
 }
 
 function drawStar(ctx, x, y, c) {
@@ -248,9 +264,9 @@ function render(ts) {
   let cnt = 0;
   const blip = counter % 10;
   const brighest = [];
-  for (const n in stars)
+  for (const star of stars.values())
   {
-      const star = stars[n];
+      // const star = stars.get(n);
       const x = star.x;
       const y = star.y;
       let r = star.h - star.d / 10;
@@ -292,7 +308,13 @@ function render(ts) {
   renderMoon(ctx, 0, ts);
 
   counter++;
-  requestAnimationFrame(render);
+  if (state.restart)
+  {
+      restart(ts);
+  }
+    else {
+      requestAnimationFrame(render);
+    }
 }
 
 const backgroundColor = "#030318";
@@ -352,6 +374,18 @@ if (moonImage.complete) {
     });
 }
 
+function restart(ts) {
+    state.lastTs = ts;
+    state.stars = 0;
+    state.nextChangeToProcess = 0;
+    state.removeQueue = new Set();
+    state.checkpoint = [ts, state.start];
+    state.restart = false;
+    state.message = "";
+    stars.clear();
+    requestAnimationFrame(render);
+}
+
 fetch_data().then(data => {
     console.log(data);
     state = {
@@ -361,7 +395,9 @@ fetch_data().then(data => {
         nextChangeToProcess: 0,
         removeQueue: new Set(),
         stars: 0,
-        checkpoint: [0, 0]
+        checkpoint: [0, 0],
+        restart: false,
+        message: "",
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
@@ -392,5 +428,7 @@ document.addEventListener("keydown", event => {
         changeSpeed(30);
     } else if (keyName == "h") {
         document.getElementById("help").classList.toggle("fadeIn");
+    } else if (keyName == "r") {
+        state.restart = true;
     }
 });
