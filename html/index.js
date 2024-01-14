@@ -194,6 +194,22 @@ function updateStars(ts) {
         if (change.date > cutoff) {
             break;
         }
+        if (state.commitsByAuthor.has(change.author))
+        {
+            if (state.commitsByAuthor.get(change.author) > 100)
+            {
+                console.log("meteor requested:" + change.author);
+                state.commitsByAuthor.set(change.author, 0);
+            }
+            else
+            {
+                state.commitsByAuthor.set(change.author, state.commitsByAuthor.get(change.author) + 1);
+            }
+        }
+        else
+        {
+            state.commitsByAuthor.set(change.author, 1);
+        }
         state.message = " ";
         for (const s of change.on) {
             const key = s.x.toString() + ":" + s.y.toString();
@@ -437,6 +453,8 @@ function restart(ts) {
     state.checkpoint = [ts, state.start];
     state.restart = false;
     state.message = "";
+    state.highlight = ["", 5000000];
+    state.commitsByAuthor = new Map();
     stars.clear();
     requestAnimationFrame(render);
 }
@@ -455,6 +473,7 @@ fetch_data().then(data => {
         message: "",
         mouse: [0, 0],
         highlight: ["", 5000000],
+        commitsByAuthor: new Map(),
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
