@@ -8,6 +8,7 @@
         padding: 0;
         margin: 0;
         overflow: hidden;
+        cursor: crosshair;
       }
       #bg {
         position: absolute;
@@ -89,6 +90,14 @@
         margin: 0.5em;
         font-family: spaceMonoFont;
       }
+      #tooltip {
+        position: absolute;
+        z-index: 600;
+        color: #ffc;
+        font-family: spaceMonoFont;
+        font-size: 0.7em;
+      }
+
       #help {
           color: #ffc;
           z-index: 500;
@@ -117,6 +126,7 @@
     <div id="help">
         <div>Speed: [1] Day per second [2] Week per second [3] Month per second</div>
     </div>
+    <div id="tooltip">Text</div>
     <script src="./index.js"></script>
   </body>
 </html>

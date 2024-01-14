@@ -204,6 +204,9 @@ function updateStars(ts) {
                 star.h++;
                 star.ld = curDate;
                 if (star.r > 3) {
+                    if (state.highlight[0] != key) {
+                        state.highlight = [s.fname, star.h];
+                    }
                     star.r = 3;
                 }
                 changed++;
@@ -276,6 +279,13 @@ function drawStar(ctx, x, y, c) {
     ctx.fill();
 }
 
+let lastHL = {
+    x: 0,
+    y: 0,
+    c: "",
+    n: "",
+};
+
 function render(ts) {
   updateStars(ts);
   ctx.fillStyle = backgroundColor;
@@ -283,6 +293,11 @@ function render(ts) {
   let cnt = 0;
   const blip = counter % 10;
   const brighest = [];
+  let hl = {
+      dist: 5000000,
+      c: "",
+      n: "",
+  };
   for (const star of stars.values())
   {
       // const star = stars.get(n);
@@ -311,6 +326,18 @@ function render(ts) {
       else if (r > 10) {
           radius = 1;
       }
+
+      const dist = ((x - state.mouse[0]) * (x - state.mouse[0]) + (y - state.mouse[1]) * (y - state.mouse[1])) / radius;
+      if (dist < hl.dist)
+      {
+            hl = {
+                dist: dist,
+                c: star.c,
+                n: star.n,
+                x: x,
+                y: y,
+            };
+      }
       const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
       // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
       fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
@@ -325,6 +352,15 @@ function render(ts) {
   }
 
   renderMoon(ctx, 0, ts);
+
+  if (lastHL.n != hl.n)
+    {
+        document.getElementById("tooltip").innerHTML = hl.n;
+        document.getElementById("tooltip").style.left = `${hl.x}px`;
+        document.getElementById("tooltip").style.top = `${hl.y}px`;
+        document.getElementById("tooltip").style.color = `rgb(${hl.c})`;
+        lastHL = hl;
+    }
 
   counter++;
   if (state.restart)
@@ -417,6 +453,8 @@ fetch_data().then(data => {
         checkpoint: [0, 0],
         restart: false,
         message: "",
+        mouse: [0, 0],
+        highlight: ["", 5000000],
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
@@ -451,3 +489,11 @@ document.addEventListener("keydown", event => {
         state.restart = true;
     }
 });
+
+document.onmousemove = (event) => {
+    let x = event.clientX;
+    let y = event.clientY;
+    state.mouse = [x, y];
+    // document.querySelector("#tooltip").style.left = `${x}px`;
+    // document.querySelector("#tooltip").style.top = `${y}px`;
+}
