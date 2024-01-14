@@ -70,9 +70,11 @@ class SavedState:
         }
 
 class Sky:
-    def __init__(self, root):
+    def __init__(self, root, output, exclude):
         self.root = root
         self.galaxies = {}
+        self.output = output
+        self.exclude = exclude
         self.changes = []
         self.saved = SavedState()
 
@@ -126,8 +128,8 @@ class Sky:
 
         if len(self.changes) == 0:
             return
-        os.makedirs("changes", exist_ok=True)
-        json.dump(self.changes, open(f"changes/{self.saved.counter}.json", "w"), indent=4)
+        os.makedirs(self.output, exist_ok=True)
+        json.dump(self.changes, open(f"{self.output}/{self.saved.counter}.json", "w"), indent=4)
         if len(self.changes) > 0:
             self.saved.end = self.changes[-1]['date']
             self.saved.commit = self.changes[-1]['commit']
@@ -139,16 +141,23 @@ class Sky:
     def save_index(self):
         idx = self.saved.as_dict()
         idx["name"] = self.get_repo_name()
-        json.dump(idx, open(f"changes/index.json", "w"), indent=4)
+        json.dump(idx, open(f"{self.output}/index.json", "w"), indent=4)
 
     def load_index(self):
-        if os.path.exists(f"changes/index.json"):
-            index = json.load(open(f"changes/index.json", "r"))
+        if os.path.exists(f"{self.output}/index.json"):
+            index = json.load(open(f"{self.output}/index.json", "r"))
             self.saved.start = index['start']
             self.saved.end = index['end']
             self.saved.commit = index['commit']
             self.saved.counter = index['counter']
             self.saved.data = index['data']
+
+    def applicable_change(self, change):
+        if change.author is None:
+            return False
+        if change.author in self.exclude:
+            return False
+        return True
 
     def generate_changes(self):
         self.load_index()
@@ -175,7 +184,7 @@ class Sky:
                 continue
             if l.startswith('='):
                 if len(s.changed) > 0 or len(s.removed) > 0:
-                    if s.author is not None:
+                    if self.applicable_change(s):
                         self.changes.append({
                             "id": cnt,
                             "date": s.date,
@@ -194,8 +203,6 @@ class Sky:
                 s.author = l[53:].strip()
                 if "@" in s.author:
                     s.author = s.author.split("@")[0]
-                else:
-                    s.author = None
             else:
                 fpath = l[2:].strip()
                 dname, fname = os.path.split(fpath)
@@ -204,7 +211,7 @@ class Sky:
                 else:
                     s.changed.append(self.get_star(dname, fname).as_dict())
 
-        if s.author is not None:
+        if self.applicable_change(s):
             self.changes.append({
                 "id": cnt,
                 "date": s.date,
@@ -260,7 +267,13 @@ def update_galaxies(sky, new_galaxies):
 
 
 if __name__ == "__main__":
-    sky = Sky(sys.argv[1])
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', '--root', help='root directory of the repository', required=True)
+    parser.add_argument('-o', '--output', help='output directory', required=True)
+    parser.add_argument('-x', '--exclude', help='exclude author', action='append')
+    args = parser.parse_args()
+    sky = Sky(args.root, args.output, args.exclude)
     # sky.load_galaxies()
     # import math
     # for d, s in sorted(sky.galaxies.items(), key=lambda x: x[1].size, reverse=False):
