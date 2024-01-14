@@ -43,8 +43,8 @@ function getOpacity(factor) {
 }
 
 function projectDate(ts) {
-    var diff = ts / 1000 * daysPerSecond;
-    var curDate = new Date(state.start.getTime() + diff * 24 * 60 * 60 * 1000);
+    var diff = (ts - state.checkpoint[0]) / 1000 * daysPerSecond;
+    var curDate = new Date(state.checkpoint[1].getTime() + diff * 24 * 60 * 60 * 1000);
     return curDate;
 }
 
@@ -157,6 +157,10 @@ function assignColor(entry) {
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
+    if (curDate.getDate() == lastDate.getDate())
+    {
+        return;
+    }
     const frameTime= (ts - state.lastTs);
     applyDecay(curDate);
 
@@ -357,8 +361,10 @@ fetch_data().then(data => {
         nextChangeToProcess: 0,
         removeQueue: new Set(),
         stars: 0,
+        checkpoint: [0, 0]
     };
     state.start.setTime(Date.parse(data.start));
+    state.checkpoint = [0, state.start];
     state.end.setTime(Date.parse(data.end));
     console.log(state);
     window.document.getElementById("progress").innerHTML = "Rendering...";
@@ -368,17 +374,22 @@ fetch_data().then(data => {
     }, 2000);
 });
 
+function changeSpeed(delta) {
+    var d = projectDate(state.lastTs);
+    state.checkpoint = [state.lastTs, d];
+    daysPerSecond = delta;
+}
+
 document.addEventListener("keydown", event => {
     const keyName = event.key;
-    if (keyName == "0")
-    {
-        daysPerSecond = 0;
+    if (keyName == "0") {
+        changeSpeed(0);
     } else if (keyName == "1") {
-        daysPerSecond = 1;
+        changeSpeed(1);
     } else if (keyName == "2") {
-        daysPerSecond = 7;
+        changeSpeed(7);
     } else if (keyName == "3") {
-        daysPerSecond = 30;
+        changeSpeed(30);
     } else if (keyName == "h") {
         document.getElementById("help").classList.toggle("fadeIn");
     }
