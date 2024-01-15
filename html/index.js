@@ -603,6 +603,7 @@ async function fetch_data()
     console.log(resp);
     const data = await resp.json();
     window.document.getElementById("repo").innerHTML = data.name;
+    window.document.getElementById("repo_name").innerHTML = data.name;
     for (const fname of data.data)
     {
         window.document.getElementById("progress").innerHTML = "Loading " + fname + "...";
@@ -696,7 +697,7 @@ document.addEventListener("keydown", event => {
         changeSpeed(7);
     } else if (keyName == "3") {
         changeSpeed(30);
-    } else if (keyName == "h") {
+    } else if ((keyName == "h") || (keyName == "?")) {
         document.getElementById("help").classList.toggle("fadeIn");
     } else if (keyName == "r") {
         state.restart = true;
