@@ -511,7 +511,7 @@ fetch_data().then(data => {
     console.log(state);
     window.document.getElementById("progress").innerHTML = "Rendering...";
     window.document.getElementById("flash").classList.add("fadeOut");
-    setInterval(() => {
+    setTimeout(() => {
         render(0);
     }, 2000);
 });
