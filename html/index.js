@@ -48,6 +48,28 @@ function projectDate(ts) {
     return curDate;
 }
 
+function renderMeteors(ctx, diff) {
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    for (let m of state.meteors)
+    {
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(m.x - m.dx*3, m.y - m.dy*3);
+        ctx.stroke();
+    }
+    ctx.strokeStyle = "#fff";
+    for (let m of state.meteors)
+    {
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(m.x - m.dx, m.y - m.dy);
+        ctx.stroke();
+        m.x += m.dx / 10;
+        m.y += m.dy / 10;
+    }
+    state.meteors = state.meteors.filter(m => (m.x > 0) && (m.x < width) && (m.y > 0) && (m.y < height));
+}
+
 function renderMoon(ctx, blur, ts) {
     if (moonReady) {
         const toCross = 500 * 1000;
@@ -170,6 +192,8 @@ function updateStatus(curDate) {
     }
 }
 
+let curMeteor = 0;
+
 function updateStars(ts) {
     var curDate = projectDate(ts);
     var lastDate = projectDate(state.lastTs);
@@ -200,6 +224,9 @@ function updateStars(ts) {
             {
                 console.log("meteor requested:" + change.author);
                 state.commitsByAuthor.set(change.author, 0);
+                const mx = randomInt(width);
+                const dx = (mx > width / 2) ? (-randomInt(15)) : (randomInt(15));
+                state.meteors.push({x: mx, y: randomInt(height / 3), dx: dx, dy: 10 + randomInt(20)});
             }
             else
             {
@@ -368,6 +395,7 @@ function render(ts) {
   }
 
   renderMoon(ctx, 0, ts);
+  renderMeteors(ctx, 0);
 
   if (lastHL.n != hl.n)
     {
@@ -455,6 +483,7 @@ function restart(ts) {
     state.message = "";
     state.highlight = ["", 5000000];
     state.commitsByAuthor = new Map();
+    state.meteors = [];
     stars.clear();
     requestAnimationFrame(render);
 }
@@ -474,6 +503,7 @@ fetch_data().then(data => {
         mouse: [0, 0],
         highlight: ["", 5000000],
         commitsByAuthor: new Map(),
+        meteors: [],
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
