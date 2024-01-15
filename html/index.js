@@ -35,6 +35,9 @@ function fillCircle(ctx, x, y, r, fillStyle) {
   ctx.fill();
 }
 
+const colors = ["128,128,255", "128,255,128", "255,128,128", "128,255,255", "255,128,255", "255,255,128"];
+let curGalaxyColor = 0;
+
 function getOpacity(factor) {
   const opacityIncrement =
     (maxStarOpacity - minStarOpacity) * Math.abs(Math.sin(factor));
@@ -71,50 +74,88 @@ function renderMeteors(ctx, diff) {
 }
 
 function renderGalaxies(ctx) {
-    ctx.strokeStyle = "#ffc";
-    ctx.setLineDash([1, 5]);
+    if (!state.showConstellations)
+    {
+        return;
+    }
+    ctx.setLineDash([1, 3]);
     for (let g of visibleGalaxies.values())
     {
-        ctx.beginPath();
-        ctx.ellipse(g.minx + (g.maxx-g.minx) / 2, g.miny + (g.maxy-g.miny) / 2,
-            (g.maxx - g.minx)/2, (g.maxy - g.miny)/2, 0, 0, 2 * Math.PI);
-        ctx.stroke();
-        // ctx.strokeRect(g.minx, g.miny, g.maxx - g.minx, g.maxy - g.miny);
-        //console.log("galaxy:", g.name);
-        continue;
-        ctx.beginPath();
-        let count = 0;
-        for (let s of g.stars.values())
+        ctx.strokeStyle = `rgba(${g.color},0.5)`;
+        // ctx.beginPath();
+        // ctx.ellipse(g.minx + (g.maxx-g.minx) / 2, g.miny + (g.maxy-g.miny) / 2,
+        //     (g.maxx - g.minx)/2, (g.maxy - g.miny)/2, 0, 0, 2 * Math.PI);
+        // ctx.stroke();
+        for (let e of g.edges)
         {
-            if (count == 0)
-            {
-                ctx.moveTo(s.x, s.y);
-            } else {
-                ctx.lineTo(s.x, s.y);
-            }
-            count++;
-            if (count > 7)
-            {
-                break;
-            }
+            ctx.moveTo(e.x1, e.y1);
+            ctx.lineTo(e.x2, e.y2);
         }
         ctx.stroke();
+        //
+        // let count = 0;
+        // for (let s of stars)
+        // {
+        //     let minDist = 100000000;
+        //     let found = s;
+        //     for (let o of stars)
+        //     {
+        //         if (s.x == o.x && s.y == o.y)
+        //         {
+        //             continue;
+        //         }
+        //         let dist = (s.x - o.x) * (s.x - o.x) + (s.y - o.y) * (s.y - o.y);
+        //         if (dist < minDist)
+        //         {
+        //             minDist = dist;
+        //             found = o;
+        //         }
+        //     }
+        //     ctx.moveTo(s.x, s.y);
+        //     ctx.lineTo(found.x, found.y);
+        //     // if (count > 7)
+        //     // {
+        //     //     break;
+        //     // }
+        // }
     }
     ctx.setLineDash([]);
 }
 
-function hitGalaxy(s) {
+function hitGalaxy(s, star) {
     if (galaxies.has(s.g))
     {
         const g = galaxies.get(s.g);
         g.hits++;
+        if (star.h > 30)
+        {
+            const key = star.x.toString() + ":" + star.y.toString();
+            if (!g.major.has(key))
+            {
+                g.major.set(key, star);
+                if (g.edges.length < 15) {
+                    let minDist = 100000000;
+                    let found = star;
+                    for (let o of g.stars)
+                    {
+                        const dist = (star.x - o.x) * (star.x - o.x) + (star.y - o.y) * (star.y - o.y);
+                        if (dist < minDist)
+                        {
+                            minDist = dist;
+                            found = o;
+                        }
+                    }
+                    g.edges.push({x1: star.x, y1: star.y, x2: found.x, y2: found.y});
+                }
+                g.stars.push(star);
+            }
+        }
         if ((g.hits > 500) && !visibleGalaxies.has(s.g))
         {
+            g.color = colors[curGalaxyColor];
+            curGalaxyColor = (curGalaxyColor + 1) % colors.length;
             visibleGalaxies.set(s.g, g);
-            // if ((g.maxx - g.minx) * (g.maxy - g.miny) > (area / 1000))
-            // {
-            //     visibleGalaxies.set(s.g, g);
-            // }
+            console.log("visible:", s.g);
         }
     }
 }
@@ -136,12 +177,13 @@ function updateGalaxy(s, star) {
             miny: star.y,
             maxx: star.x,
             maxy: star.y,
-            stars: new Map(),
+            major: new Map(),
+            stars: [],
+            edges: [],
             hits: 0,
+            color: "255,255,255", 
         });
     }
-    const key = Math.floor(star.x / minStep).toString() + ":" + Math.floor(star.y / minStep).toString();
-    galaxies.get(s.g).stars.set(key, star);
 }
 
 function renderMoon(ctx, blur, ts) {
@@ -296,7 +338,7 @@ function updateStars(ts) {
         {
             if (state.commitsByAuthor.get(change.author) > 100)
             {
-                console.log("meteor requested:" + change.author);
+                // console.log("meteor requested:" + change.author);
                 state.commitsByAuthor.set(change.author, 0);
                 const mx = randomInt(width);
                 const dx = (mx > width / 2) ? (-randomInt(15)) : (randomInt(15));
@@ -328,7 +370,7 @@ function updateStars(ts) {
                 }
                 if (star.h > 20)
                 {
-                    hitGalaxy(s);
+                    hitGalaxy(s, star);
                 }
                 /*
                 if (star.h > 10)
@@ -618,6 +660,7 @@ fetch_data().then(data => {
         highlight: ["", 5000000],
         commitsByAuthor: new Map(),
         meteors: [],
+        showConstellations: false,
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
@@ -656,6 +699,9 @@ document.addEventListener("keydown", event => {
         document.getElementById("help").classList.toggle("fadeIn");
     } else if (keyName == "r") {
         state.restart = true;
+    } else if (keyName == "c") {
+        state.showConstellations = !state.showConstellations;
+        console.log("showConstellations:", state.showConstellations);
     }
 });
 
