@@ -302,6 +302,7 @@ function updateStatus(curDate) {
     } else if (daysPerSecond == 30) {
         statusMessage += " \udb81\udcc5 m/s";
     }
+    statusMessage += " \uf41e&nbsp;" + state.stars + " \udb82\ude82&nbsp;" + visibleGalaxies.size;
     if (lastShownStatus != statusMessage)
     {
         document.getElementById("status").innerHTML = statusMessage;
