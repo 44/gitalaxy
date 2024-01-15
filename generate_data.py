@@ -34,6 +34,7 @@ class Star:
         self.y = int(g.y + dist * math.sin(angle))
         self.fname = fname
         self.c = os.path.splitext(fname)[1][1:].lower()
+        self.g = g
         fullpath = os.path.join(g.path, fname).lower()
         if "test" in fullpath:
             self.c = "test"
@@ -41,8 +42,9 @@ class Star:
         return {
             "x": self.x,
             "y": self.y,
-            "fname": self.fname,
-            "c": self.c
+            "n": self.fname,
+            "c": self.c,
+            "g": self.g.path
         }
 
 @dataclass

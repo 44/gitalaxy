@@ -248,14 +248,14 @@ function updateStars(ts) {
                 star.ld = curDate;
                 if (star.r > 3) {
                     if (state.highlight[0] != key) {
-                        state.highlight = [s.fname, star.h];
+                        state.highlight = [s.n, star.h];
                     }
                     star.r = 3;
                 }
                 changed++;
             } else {
                 const star = {
-                    n: s.fname,
+                    n: s.n,
                     x: s.x * width / 256 / 256,
                     y: s.y * height / 256 / 256,
                     r: 1.0, // radius - should be calculated from the number of hits and decay
@@ -264,6 +264,7 @@ function updateStars(ts) {
                     d: 0, // decay
                     ld: curDate, // last decay
                     c: assignColor(s),
+                    g: s.g,
                 };
                 stars.set(key, star);
                 state.stars++;
@@ -327,6 +328,7 @@ let lastHL = {
     y: 0,
     c: "",
     n: "",
+    g: "",
 };
 
 function render(ts) {
@@ -340,6 +342,7 @@ function render(ts) {
       dist: 5000000,
       c: "",
       n: "",
+      g: "",
   };
   for (const star of stars.values())
   {
@@ -379,6 +382,7 @@ function render(ts) {
                 n: star.n,
                 x: x,
                 y: y,
+                g: star.g,
             };
       }
       const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
@@ -399,7 +403,8 @@ function render(ts) {
 
   if (lastHL.n != hl.n)
     {
-        document.getElementById("tooltip").innerHTML = hl.n;
+        document.getElementById("starname").innerHTML = hl.n;
+        document.getElementById("galaxy").innerHTML = `in ${hl.g}`;
         document.getElementById("tooltip").style.left = `${hl.x}px`;
         document.getElementById("tooltip").style.top = `${hl.y}px`;
         document.getElementById("tooltip").style.color = `rgb(${hl.c})`;
