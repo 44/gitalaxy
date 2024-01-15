@@ -72,11 +72,6 @@
           font-family: repoFont;
           font-size: 8em;
       }
-      h2 {
-          color: #114;
-          text-shadow: #ffc 0px 0px 1px;
-          text-shadow: 0 0 1px #ffc, 0 0 5px #ffc, 0 0 10px #ffc;
-      }
       .fadeOut {
         animation-name: fadeOut;
       }
@@ -117,16 +112,18 @@
         animation-fill-mode: both;
         font-family: spaceMonoFont;
         display: flex;
-        justify-content: space-evenly;
+        justify-content: space-between;
         flex-direction: row;
         font-size: 0.8em;
       }
       #help div {
-          flex: 2 1 1;
+          flex: 3 1 1;
           max-width: 50%;
+          padding: 0 3em;
       }
     </style>
   </head>
+          <!-- border: 1px solid #ffc; -->
   <body>
     <div id="bg">
         <div id="status"></div>
@@ -139,12 +136,22 @@
         <h1 id="repo">OneDrive.Client</h1>
         <div id="progress">Loading...</div>
     </div>
+    <div id="tooltip"><span id="starname"></span><br><span id="galaxy"></span></div>
     <div id="help">
         <div>
-            <h2>Legend</h2>
-            <p>Visualization of the history of <span id="repo_name"></span> repository. Each star represents a file, the more changes it has, the brighter it shines.
-            Different types of files are represented by different colors:
+            <h2>Info</h2>
             <ul>
+                <li>Repository: <span id="info_repo"></span></li>
+                <li>Start: <span id="info_start"></span></li>
+                <li>End: <span id="info_end"></span></li>
+                <li>Commits: <span id="info_commits"></span></li>
+            </ul>
+        </div>
+        <div>
+            <h2>Legend</h2>
+            <p>Visualization of the history of <span id="repo_name"></span> repository.<br> Each star represents a file, the more changes it has, the brighter it shines.<br>
+            Different types of files are represented by different colors:
+            <ul style="columns:2">
                 <li style="color:rgb(196,255,196)">test related</li>
                 <li style="color:rgb(255,196,196)">localization and logging</li>
                 <li style="color:rgb(196,196,255)">project files</li>
@@ -155,21 +162,21 @@
         </div>
         <div>
             <h2>Controls</h2>
-            <ul>
-                <li>Use mouse to see star details</li>
+            <span>Use mouse to see star details</span>
+            <h4>Keyboard</h4>
+            <ul style="columns:2">
                 <li>0 - pause</li>
                 <li>1 - set speed to day/second</li>
                 <li>2 - set speed to week/second</li>
-                <li>3 - set speed to month/second</li>
+                <li style="padding-right: 3em;">3 - set speed to month/second</li>
                 <li>R - Restart from beginning</li>
-                <li>C - Show/hide constallations</li>
+                <li>C - Show/hide constellations</li>
                 <li>H / ? - Toggle help</li>
         </div>
-        <div>
-            <div style="position: absolute; bottom: 1em;" id="powered">Powered by <span class="nf-fa-git" style="font-size:1.3em; vertical-align: bottom; margin-right:3px;">&#xe702;ALAXY</span></span>
+        <div style="padding:0 1em;padding-top:8%;text-align:right">
+            <div id="powered" style="display:inline-block;text-align:right;padding: 0 0;">Powered&nbsp;by <span class="nf-fa-git" style="font-size:1.3em; vertical-align: bottom; margin-right:3px;">&#xe702;ALAXY</span></div>
         </div>
     </div>
-    <div id="tooltip"><span id="starname"></span><br><span id="galaxy"></span></div>
     <script src="./index.js"></script>
   </body>
 </html>

@@ -72,11 +72,13 @@ class SavedState:
         }
 
 class Sky:
-    def __init__(self, root, output, exclude):
-        self.root = root
+    def __init__(self, cfg):
+        self.root = cfg.root
         self.galaxies = {}
-        self.output = output
-        self.exclude = exclude
+        self.output = cfg.output
+        self.exclude = cfg.exclude
+        self.all_branches = cfg.all
+        self.ignore = cfg.ignore
         self.changes = []
         self.saved = SavedState()
 
@@ -157,13 +159,17 @@ class Sky:
     def applicable_change(self, change):
         if change.author is None:
             return False
+        if self.exclude is None:
+            return True
         if change.author in self.exclude:
             return False
         return True
 
     def generate_changes(self):
         self.load_index()
-        git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse']
+        git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse', '--no-renames']
+        if self.all_branches:
+            git_args.append('--all')
         if self.saved.commit is not None:
             git_args.append(f"{self.saved.commit}..HEAD")
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
@@ -207,6 +213,14 @@ class Sky:
                     s.author = s.author.split("@")[0]
             else:
                 fpath = l[2:].strip()
+                ignored = False
+                if self.ignore is not None:
+                    for i in self.ignore:
+                        if i in fpath:
+                            ignored = True
+                            break
+                if ignored:
+                    continue
                 dname, fname = os.path.split(fpath)
                 if l.startswith('D'):
                     s.removed.append(self.get_star(dname, fname).as_dict())
@@ -236,6 +250,8 @@ if __name__ == "__main__":
     parser.add_argument('-r', '--root', help='root directory of the repository', required=True)
     parser.add_argument('-o', '--output', help='output directory', required=True)
     parser.add_argument('-x', '--exclude', help='exclude author', action='append')
+    parser.add_argument('-a', '--all', help='include all branches', action='store_true')
+    parser.add_argument('-i', '--ignore', help='ignore path', action='append')
     args = parser.parse_args()
-    sky = Sky(args.root, args.output, args.exclude)
+    sky = Sky(args)
     sky.generate_changes()

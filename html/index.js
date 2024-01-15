@@ -670,6 +670,10 @@ fetch_data().then(data => {
     console.log(state);
     window.document.getElementById("progress").innerHTML = "Rendering...";
     window.document.getElementById("flash").classList.add("fadeOut");
+    window.document.getElementById("info_repo").innerHTML = data.name;
+    window.document.getElementById("info_start").innerHTML = state.start.toISOString().substring(0, 10);
+    window.document.getElementById("info_end").innerHTML = state.end.toISOString().substring(0, 10);
+    window.document.getElementById("info_commits").innerHTML = all_changes.length.toString();
     setTimeout(() => {
         render(0);
     }, 2000);
