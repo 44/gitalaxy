@@ -249,12 +249,18 @@ function renderMoon(ctx, blur, ts) {
   // ctx.fillStyle = "white";
 }
 
+const decayFactor = {
+    minLife: 30,
+    decay2x: 160,
+    decay5x: 365,
+};
+
 function applyDecay(curDate) {
     for (let n of stars.keys())
     {
         const star = stars.get(n);
         const daysFromLastHit = Math.floor((curDate.getTime() - star.l.getTime()) / 1000 / 60 / 60 / 24);
-        if (daysFromLastHit < 30)
+        if (daysFromLastHit < decayFactor.minLife)
         {
             continue;
         }
@@ -263,7 +269,7 @@ function applyDecay(curDate) {
         {
             continue;
         }
-        const factor = (daysFromLastHit > 365) ? 5 : ((daysFromLastHit > 160) ? 2 : 1);
+        const factor = (daysFromLastHit > decayFactor.decay5x) ? 5 : ((daysFromLastHit > decayFactor.decay2x) ? 2 : 1);
         star.d += daysFromLastDecay * factor;
         star.ld = curDate;
 
@@ -292,7 +298,7 @@ let lastShownStatus = "";
 
 function updateStatus(curDate) {
     let cutoff = curDate.toISOString().substring(0, 10);
-    let statusMessage = cutoff;
+    let statusMessage = '<span class="repoInSummary">' + state.repo + "</span> " + cutoff;
     if (daysPerSecond == 0) {
         statusMessage += " \udb80\udfe6 paused";
     } else if (daysPerSecond == 1) {
@@ -663,6 +669,7 @@ fetch_data().then(data => {
         commitsByAuthor: new Map(),
         meteors: [],
         showConstellations: false,
+        repo: data.name,
     };
     state.start.setTime(Date.parse(data.start));
     state.checkpoint = [0, state.start];
@@ -674,6 +681,11 @@ fetch_data().then(data => {
     window.document.getElementById("info_start").innerHTML = state.start.toISOString().substring(0, 10);
     window.document.getElementById("info_end").innerHTML = state.end.toISOString().substring(0, 10);
     window.document.getElementById("info_commits").innerHTML = all_changes.length.toString();
+    const durationInDays = (state.end.getTime() - state.start.getTime()) / 1000 / 60 / 60 / 24;
+    decayFactor.minLife = Math.floor(durationInDays * 300 / all_changes.length);
+    decayFactor.decay2x = decayFactor.minLife * 5;
+    decayFactor.decay5x = decayFactor.minLife * 10;
+    console.log("decay:", decayFactor);
     setTimeout(() => {
         render(0);
     }, 2000);
