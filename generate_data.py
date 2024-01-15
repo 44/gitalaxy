@@ -10,6 +10,8 @@ import json
 
 class Galaxy:
     def __init__(self, path):
+        if path.startswith("00"):
+            raise f"Invalid path: {path}"
         self.size = 1
         self.path = path
         h = blake2b(digest_size=4)
@@ -17,11 +19,9 @@ class Galaxy:
         d = h.digest()
         self.x = d[0]*256+d[1]
         self.y = d[2]*256+d[3]
-        self.scale = 1
         self.scale = 3 + d[0] % 3
     def add(self):
         self.size += 1
-        # self.scale = math.log(self.size, 4) + 1
 
 class Star:
     def __init__(self, g, fname):
@@ -210,8 +210,13 @@ class Sky:
                 dname, fname = os.path.split(fpath)
                 if l.startswith('D'):
                     s.removed.append(self.get_star(dname, fname).as_dict())
+                elif l.startswith('R'):
+                    pass
                 else:
-                    s.changed.append(self.get_star(dname, fname).as_dict())
+                    try:
+                        s.changed.append(self.get_star(dname, fname).as_dict())
+                    except:
+                        print(f"Failed to get star for '{l}'")
 
         if self.applicable_change(s):
             self.changes.append({
@@ -225,49 +230,6 @@ class Sky:
         self.save_changes(force=True)
         self.save_index()
 
-def collapse(sky):
-    new_galaxies = dict()
-
-    for d, s in sky.galaxies.items():
-        new_galaxies[d] = s.size
-
-    while True:
-        try:
-            ordered = sorted(new_galaxies.items(), key=lambda e: len(e[0].split("/")), reverse=True)
-            d, s = next(x for x in ordered if x[1] < 100 and len(x[0]) > 0)
-            parent = os.path.dirname(d)
-            if parent in new_galaxies:
-                new_galaxies[parent] += s
-            else:
-                new_galaxies[parent] = s
-            del new_galaxies[d]
-        except:
-            break
-    return new_galaxies
-
-def update_galaxies(sky, new_galaxies):
-    for d, s in new_galaxies.items():
-        if not d in sky.galaxies:
-            sky.galaxies[d] = Galaxy(d)
-        sky.galaxies[d].size = s
-        sky.galaxies[d].scale = math.log(s, 4) + 1
-
-    relink = []
-
-    for d, s in sky.galaxies.items():
-        if d in new_galaxies:
-            continue
-        parent = os.path.dirname(d)
-        while True:
-            if parent in new_galaxies:
-                relink.append( (d, parent) )
-                break
-            parent = os.path.dirname(parent)
-
-    for d, parent in relink:
-        sky.galaxies[d] = sky.galaxies[parent]
-
-
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
@@ -276,9 +238,4 @@ if __name__ == "__main__":
     parser.add_argument('-x', '--exclude', help='exclude author', action='append')
     args = parser.parse_args()
     sky = Sky(args.root, args.output, args.exclude)
-    # sky.load_galaxies()
-    # import math
-    # for d, s in sorted(sky.galaxies.items(), key=lambda x: x[1].size, reverse=False):
-    #     print(d, s.size, int(math.log(s.size, 4) + 1), s.x, s.y)
-    # update_galaxies(sky, collapse(sky))
     sky.generate_changes()
