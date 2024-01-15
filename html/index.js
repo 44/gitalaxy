@@ -70,6 +70,80 @@ function renderMeteors(ctx, diff) {
     state.meteors = state.meteors.filter(m => (m.x > 0) && (m.x < width) && (m.y > 0) && (m.y < height));
 }
 
+function renderGalaxies(ctx) {
+    ctx.strokeStyle = "#ffc";
+    ctx.setLineDash([1, 5]);
+    for (let g of visibleGalaxies.values())
+    {
+        ctx.beginPath();
+        ctx.ellipse(g.minx + (g.maxx-g.minx) / 2, g.miny + (g.maxy-g.miny) / 2,
+            (g.maxx - g.minx)/2, (g.maxy - g.miny)/2, 0, 0, 2 * Math.PI);
+        ctx.stroke();
+        // ctx.strokeRect(g.minx, g.miny, g.maxx - g.minx, g.maxy - g.miny);
+        //console.log("galaxy:", g.name);
+        continue;
+        ctx.beginPath();
+        let count = 0;
+        for (let s of g.stars.values())
+        {
+            if (count == 0)
+            {
+                ctx.moveTo(s.x, s.y);
+            } else {
+                ctx.lineTo(s.x, s.y);
+            }
+            count++;
+            if (count > 7)
+            {
+                break;
+            }
+        }
+        ctx.stroke();
+    }
+    ctx.setLineDash([]);
+}
+
+function hitGalaxy(s) {
+    if (galaxies.has(s.g))
+    {
+        const g = galaxies.get(s.g);
+        g.hits++;
+        if ((g.hits > 500) && !visibleGalaxies.has(s.g))
+        {
+            visibleGalaxies.set(s.g, g);
+            // if ((g.maxx - g.minx) * (g.maxy - g.miny) > (area / 1000))
+            // {
+            //     visibleGalaxies.set(s.g, g);
+            // }
+        }
+    }
+}
+
+function updateGalaxy(s, star) {
+    if (galaxies.has(s.g))
+    {
+        const g = galaxies.get(s.g);
+        g.minx = Math.min(g.minx, star.x);
+        g.miny = Math.min(g.miny, star.y);
+        g.maxx = Math.max(g.maxx, star.x);
+        g.maxy = Math.max(g.maxy, star.y);
+    }
+    else
+    {
+        galaxies.set(s.g, {
+            name: s.g,
+            minx: star.x,
+            miny: star.y,
+            maxx: star.x,
+            maxy: star.y,
+            stars: new Map(),
+            hits: 0,
+        });
+    }
+    const key = Math.floor(star.x / minStep).toString() + ":" + Math.floor(star.y / minStep).toString();
+    galaxies.get(s.g).stars.set(key, star);
+}
+
 function renderMoon(ctx, blur, ts) {
     if (moonReady) {
         const toCross = 500 * 1000;
@@ -252,6 +326,33 @@ function updateStars(ts) {
                     }
                     star.r = 3;
                 }
+                if (star.h > 20)
+                {
+                    hitGalaxy(s);
+                }
+                /*
+                if (star.h > 10)
+                {
+                    if (galaxies.has(s.g))
+                    {
+                        const g = galaxies.get(s.g);
+                        g.minx = Math.min(g.minx, star.x);
+                        g.miny = Math.min(g.miny, star.y);
+                        g.maxx = Math.max(g.maxx, star.x);
+                        g.maxy = Math.max(g.maxy, star.y);
+                    }
+                    else
+                    {
+                        galaxies.set(s.g, {
+                            name: s.g,
+                            minx: star.x,
+                            miny: star.y,
+                            maxx: star.x,
+                            maxy: star.y,
+                        });
+                    }
+                }
+                */
                 changed++;
             } else {
                 const star = {
@@ -268,6 +369,7 @@ function updateStars(ts) {
                 };
                 stars.set(key, star);
                 state.stars++;
+                updateGalaxy(s, star);
                 added++;
             }
         }
@@ -398,6 +500,7 @@ function render(ts) {
       // console.log("brightest:", i, star.n, brighest[i].r);
   }
 
+  renderGalaxies(ctx);
   renderMoon(ctx, 0, ts);
   renderMeteors(ctx, 0);
 
@@ -424,10 +527,14 @@ function render(ts) {
 const backgroundColor = "#030318";
 const width = window.innerWidth;
 const height = window.innerHeight;
+const minStep = Math.floor(height / 40);
+const area = width * height;
 const maxStarRadius = 1.5;
 const minStarOpacity = 0.1;
 const maxStarOpacity = 0.7;
 const stars = initStars(); // createStars(width, height, 30);
+const galaxies = new Map();
+const visibleGalaxies = new Map();
 const moon = {
   color: "#fea",
   x: height / 3,
@@ -490,6 +597,8 @@ function restart(ts) {
     state.commitsByAuthor = new Map();
     state.meteors = [];
     stars.clear();
+    galaxies.clear();
+    visibleGalaxies.clear();
     requestAnimationFrame(render);
 }
 
