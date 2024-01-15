@@ -64,8 +64,8 @@ function renderMeteors(ctx, diff) {
         ctx.moveTo(m.x, m.y);
         ctx.lineTo(m.x - m.dx, m.y - m.dy);
         ctx.stroke();
-        m.x += m.dx / 10;
-        m.y += m.dy / 10;
+        m.x += m.dx / 2;
+        m.y += m.dy / 2;
     }
     state.meteors = state.meteors.filter(m => (m.x > 0) && (m.x < width) && (m.y > 0) && (m.y < height));
 }
@@ -500,7 +500,7 @@ fetch_data().then(data => {
         checkpoint: [0, 0],
         restart: false,
         message: "",
-        mouse: [0, 0],
+        mouse: [0, 0, 0],
         highlight: ["", 5000000],
         commitsByAuthor: new Map(),
         meteors: [],
@@ -514,6 +514,12 @@ fetch_data().then(data => {
     setTimeout(() => {
         render(0);
     }, 2000);
+    setInterval(() => {
+        if (state.mouse[2] < Date.now() - 5000)
+        {
+            state.mouse = [randomInt(width), randomInt(height), state.mouse[2]];
+        }
+    }, 5000);
 });
 
 function changeSpeed(delta) {
@@ -542,7 +548,7 @@ document.addEventListener("keydown", event => {
 document.onmousemove = (event) => {
     let x = event.clientX;
     let y = event.clientY;
-    state.mouse = [x, y];
+    state.mouse = [x, y, Date.now()];
     // document.querySelector("#tooltip").style.left = `${x}px`;
     // document.querySelector("#tooltip").style.top = `${y}px`;
 }
