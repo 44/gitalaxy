@@ -347,6 +347,10 @@ function updateStars(ts) {
             {
                 // console.log("meteor requested:" + change.author);
                 state.commitsByAuthor.set(change.author, 0);
+                if (state.meteors.length > 15)
+                {
+                    state.meteors.shift();
+                }
                 const mx = randomInt(width);
                 const dx = (mx > width / 2) ? (-randomInt(15)) : (randomInt(15));
                 state.meteors.push({x: mx, y: randomInt(height / 3), dx: dx, dy: 10 + randomInt(20)});
@@ -536,9 +540,12 @@ function render(ts) {
                 g: star.g,
             };
       }
-      const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
-      // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
-      fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
+      if (cnt < 10000)
+      {
+          const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
+          // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
+          fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
+      }
       cnt++;
   }
 
