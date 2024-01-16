@@ -6,23 +6,6 @@ const started = new Date();
 var lastShown = 0;
 let daysPerSecond = 7;
 
-function createStars(width, height, spacing) {
-  const stars = {};
-
-  for (let x = 0; x < width; x += spacing) {
-    for (let y = 0; y < height; y += spacing) {
-      const star = {
-        x: x + randomInt(spacing),
-        y: y + randomInt(spacing),
-        r: Math.random() * maxStarRadius
-      };
-      const key = star.x.toString() + ":" + star.y.toString();
-      stars[key] = star;
-    }
-  }
-  return stars;
-}
-
 function initStars()
 {
     return new Map();
@@ -92,32 +75,6 @@ function renderGalaxies(ctx) {
             ctx.lineTo(e.x2, e.y2);
         }
         ctx.stroke();
-        //
-        // let count = 0;
-        // for (let s of stars)
-        // {
-        //     let minDist = 100000000;
-        //     let found = s;
-        //     for (let o of stars)
-        //     {
-        //         if (s.x == o.x && s.y == o.y)
-        //         {
-        //             continue;
-        //         }
-        //         let dist = (s.x - o.x) * (s.x - o.x) + (s.y - o.y) * (s.y - o.y);
-        //         if (dist < minDist)
-        //         {
-        //             minDist = dist;
-        //             found = o;
-        //         }
-        //     }
-        //     ctx.moveTo(s.x, s.y);
-        //     ctx.lineTo(found.x, found.y);
-        //     // if (count > 7)
-        //     // {
-        //     //     break;
-        //     // }
-        // }
     }
     ctx.setLineDash([]);
 }
@@ -181,7 +138,7 @@ function updateGalaxy(s, star) {
             stars: [],
             edges: [],
             hits: 0,
-            color: "255,255,255", 
+            color: "255,255,255",
         });
     }
 }
@@ -197,56 +154,8 @@ function renderMoon(ctx, blur, ts) {
         const b = width/2 + 100;
         const c = 50;
         const y = a * (x - b) * (x - b) + c;
-        // console.log('mooo', x, y, a, b, c, width, height);
         ctx.drawImage(moonImage, Math.floor(x), Math.floor(y), 30, 30);
-
-
-        // y = a * (x - b)^2 + 50;
-        // c = 50
-        // b = w/2 + 100
-        //
-        // h/2 = a * (0 - w/2 - 100)^2 + 50;
-        // a= (h/2 - 50)/(w/2 + 100)^2
-        //
-        //
-        // 1) x = 0, y = height/2
-        //
-        // -> height/2 = c;
-        //
-        // 2) x = width/2 + 100, y = 50
-        //
-        // -> 50 = a * (width/2 + 100)^2 + b * (width/2 + 100) + h/2
-        // -> b = (50 - h/w - a *(w/2+100)^2)/(w/2+100)
-        //
-        // 3) x = w+200, y = h/2
-        //
-        // -> 0 = a * (w+200)^2 + b * (w+200)
-        // -> a = -b/(w+200)
-        //
-        // -> b = (50 - h/w + b/(w+200)*(w+200)^2)/(w/2+100)
-        //
-        //
-        //
-        //
     }
-  // const period = 30;
-  // var x = Math.floor(ts / 1000 * width / period) % (width + 200);
-  // var y = Math.floor(height/3 - height / 3 * ts / 1000 / period / 2) % Math.floor(height / 3);
-  // document.getElementById("moon").style.left = `${x}px`;
-  // document.getElementById("moon").style.top = `${y}px`;
-  // document.getElementById("moon").top = 
-  // fillCircle(ctx, moon.x, moon.y, moon.r, moon.color);
-  // // render a smaller circle above the moon to give it that well-known moon-shape
-  // fillCircle(
-  //   ctx,
-  //   moon.x - moon.r / 3,
-  //   moon.y - moon.r / 3,
-  //   moon.r,
-  //   backgroundColor
-  // );
-
-  // ctx.font = "30px Arial";
-  // ctx.fillStyle = "white";
 }
 
 const decayFactor = {
@@ -345,7 +254,6 @@ function updateStars(ts) {
         {
             if (state.commitsByAuthor.get(change.author) > 100)
             {
-                // console.log("meteor requested:" + change.author);
                 state.commitsByAuthor.set(change.author, 0);
                 if (state.meteors.length > 15)
                 {
@@ -383,29 +291,6 @@ function updateStars(ts) {
                 {
                     hitGalaxy(s, star);
                 }
-                /*
-                if (star.h > 10)
-                {
-                    if (galaxies.has(s.g))
-                    {
-                        const g = galaxies.get(s.g);
-                        g.minx = Math.min(g.minx, star.x);
-                        g.miny = Math.min(g.miny, star.y);
-                        g.maxx = Math.max(g.maxx, star.x);
-                        g.maxy = Math.max(g.maxy, star.y);
-                    }
-                    else
-                    {
-                        galaxies.set(s.g, {
-                            name: s.g,
-                            minx: star.x,
-                            miny: star.y,
-                            maxx: star.x,
-                            maxy: star.y,
-                        });
-                    }
-                }
-                */
                 changed++;
             } else {
                 const star = {
@@ -435,7 +320,6 @@ function updateStars(ts) {
             }
         }
         state.nextChangeToProcess = i + 1;
-        // console.log("processed:", i, change.date, change.on.length, change.off.length);
     }
 
     const allowedDeletes = 500 * frameTime / 1000 * daysPerSecond;
@@ -501,7 +385,6 @@ function render(ts) {
   };
   for (const star of stars.values())
   {
-      // const star = stars.get(n);
       const x = star.x;
       const y = star.y;
       let r = star.h - star.d / 10;
@@ -542,8 +425,7 @@ function render(ts) {
       }
       if (cnt < 10000)
       {
-          const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1; //getOpacity(counter * cnt);
-          // fillCircle(ctx, x, y, radius, `rgba(255, 255, 255, ${opacity})`);
+          const opacity = ((cnt % 10 == blip) && (radius > 0.5)) ? 0.5 : 1;
           fillCircle(ctx, x, y, radius, `rgba(${star.c},${opacity})`);
       }
       cnt++;
@@ -553,7 +435,6 @@ function render(ts) {
   {
       const star = brighest[i].c;
       drawStar(ctx, star.x, star.y, star.c);
-      // console.log("brightest:", i, star.n, brighest[i].r);
   }
 
   renderGalaxies(ctx);
@@ -588,7 +469,7 @@ const area = width * height;
 const maxStarRadius = 1.5;
 const minStarOpacity = 0.1;
 const maxStarOpacity = 0.7;
-const stars = initStars(); // createStars(width, height, 30);
+const stars = initStars();
 const galaxies = new Map();
 const visibleGalaxies = new Map();
 const moon = {
@@ -734,6 +615,4 @@ document.onmousemove = (event) => {
     let x = event.clientX;
     let y = event.clientY;
     state.mouse = [x, y, Date.now()];
-    // document.querySelector("#tooltip").style.left = `${x}px`;
-    // document.querySelector("#tooltip").style.top = `${y}px`;
 }
