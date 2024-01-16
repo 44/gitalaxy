@@ -1,186 +1,201 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-  <head>
-    <title>Starry sky</title>
-    <style>
-      body,
-      html {
-        padding: 0;
-        margin: 0;
-        overflow: hidden;
-        cursor: crosshair;
-      }
-      #bg {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        background-image: radial-gradient(ellipse at bottom , #080e21 0%,  #1b2735 95%);
-        background-image: radial-gradient(ellipse at bottom , #235 0%, #000 85%);
-        background: #010140;
-        background: radial-gradient(ellipse 100% 100% at bottom, #101040 15%, #010101 95%);
-      }
-      #canvas {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: 100;
-      }
-      #moon {
-        position: absolute;
-        left: 100px;
-        top: 100px;
-        width: 50px;
-        height: 50px;
-        z-index: 300;
-        background-image: url(./full-moon.png);
-        background-repeat: no-repeat;
-        background-size: 50px;
-        background-blend-mode: multiply;
-        opacity: 1;
-      }
-      @font-face {
-        font-family: repoFont;
-        src: url('./NightSky-B0P3.ttf');
-      }
-      @font-face {
-        font-family: spaceMonoFont;
-        src: url('./SpaceMonoNerdFont-Regular.ttf');
-      }
-      @keyframes fadeOut {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
-      }
-      @keyframes fadeIn {
-        0% { opacity: 0; }
-        100% { opacity: 1; }
-      }
-      #flash {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        z-index: 400;
-        color: #ffc;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        animation-duration: 3s;
-        animation-fill-mode: forwards;
-      }
-      h1 {
-          font-family: repoFont;
-          font-size: 8em;
-      }
-      .fadeOut {
-        animation-name: fadeOut;
-      }
-      .fadeIn {
-        animation-name: fadeIn;
-      }
-      #progress {
-        font-size: 2em;
-        color: #ffc;
-      }
-      #status {
-        font-size: 1.2em;
-        color: #ffc;
-        margin: 0.5em;
-        font-family: spaceMonoFont;
-      }
-      #tooltip {
-        position: absolute;
-        z-index: 600;
-        color: #ffc;
-        font-family: spaceMonoFont;
-        font-size: 0.7em;
-      }
-      #galaxy {
-        color: #ffc;
-        font-size: 0.5em;
-      }
+    <head>
+        <title>Starry sky</title>
+        <style>
+            body,
+            html {
+                padding: 0;
+                margin: 0;
+                overflow: hidden;
+                cursor: crosshair;
+            }
+            #bg {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                z-index: 1;
+                background-image: radial-gradient(ellipse at bottom, #080e21 0%, #1b2735 95%);
+                background-image: radial-gradient(ellipse at bottom, #235 0%, #000 85%);
+                background: #010140;
+                background: radial-gradient(ellipse 100% 100% at bottom, #101040 15%, #010101 95%);
+            }
+            #canvas {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                z-index: 100;
+            }
+            #moon {
+                position: absolute;
+                left: 100px;
+                top: 100px;
+                width: 50px;
+                height: 50px;
+                z-index: 300;
+                background-image: url(./full-moon.png);
+                background-repeat: no-repeat;
+                background-size: 50px;
+                background-blend-mode: multiply;
+                opacity: 1;
+            }
+            @font-face {
+                font-family: repoFont;
+                src: url("./NightSky-B0P3.ttf");
+            }
+            @font-face {
+                font-family: spaceMonoFont;
+                src: url("./SpaceMonoNerdFont-Regular.ttf");
+            }
+            @keyframes fadeOut {
+                0% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                }
+            }
+            @keyframes fadeIn {
+                0% {
+                    opacity: 0;
+                }
+                100% {
+                    opacity: 1;
+                }
+            }
+            #flash {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                z-index: 400;
+                color: #ffc;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                animation-duration: 3s;
+                animation-fill-mode: forwards;
+            }
+            h1 {
+                font-family: repoFont;
+                font-size: 8em;
+            }
+            .fadeOut {
+                animation-name: fadeOut;
+            }
+            .fadeIn {
+                animation-name: fadeIn;
+            }
+            #progress {
+                font-size: 2em;
+                color: #ffc;
+            }
+            #status {
+                font-size: 1.2em;
+                color: #ffc;
+                margin: 0.5em;
+                font-family: spaceMonoFont;
+            }
+            #tooltip {
+                position: absolute;
+                z-index: 600;
+                color: #ffc;
+                font-family: spaceMonoFont;
+                font-size: 0.7em;
+            }
+            #galaxy {
+                color: #ffc;
+                font-size: 0.5em;
+            }
 
-      #help {
-          color: #ffc;
-          z-index: 500;
-          position: absolute;
-          width: 100%;
-          height: auto;
-          bottom: 0;
-          opacity: 0;
-        animation-duration: 1s;
-        animation-fill-mode: both;
-        font-family: spaceMonoFont;
-        display: flex;
-        justify-content: space-between;
-        flex-direction: row;
-        font-size: 0.8em;
-      }
-      #help div {
-          flex: 3 1 1;
-          max-width: 50%;
-          padding: 0 3em;
-      }
-      .repoInSummary {
-          font-family: repoFont;
-      }
-    </style>
-  </head>
-          <!-- border: 1px solid #ffc; -->
-  <body>
-    <div id="bg">
-        <div id="status"></div>
-    </div>
-    <canvas id="canvas"></canvas>
-    <div style="display:none">
-        <img id="moon" src="./full-moon.png" width="50" height="50" />
-    </div>
-    <div id="flash">
-        <h1 id="repo"></div>
-        <div id="progress">Loading...</div>
-    </div>
-    <div id="tooltip"><span id="starname"></span><br><span id="galaxy"></span></div>
-    <div id="help">
-        <div>
-            <h2>Info</h2>
-            <ul>
-                <li>Repository: <span id="info_repo"></span></li>
-                <li>Start: <span id="info_start"></span></li>
-                <li>End: <span id="info_end"></span></li>
-                <li>Commits: <span id="info_commits"></span></li>
-            </ul>
+            #help {
+                color: #ffc;
+                z-index: 500;
+                position: absolute;
+                width: 100%;
+                height: auto;
+                bottom: 0;
+                opacity: 0;
+                animation-duration: 1s;
+                animation-fill-mode: both;
+                font-family: spaceMonoFont;
+                display: flex;
+                justify-content: space-between;
+                flex-direction: row;
+                font-size: 0.8em;
+            }
+            #help div {
+                flex: 3 1 1;
+                max-width: 50%;
+                padding: 0 3em;
+            }
+            .repoInSummary {
+                font-family: repoFont;
+            }
+        </style>
+    </head>
+    <!-- border: 1px solid #ffc; -->
+    <body>
+        <div id="bg">
+            <div id="status"></div>
         </div>
-        <div>
-            <h2>Legend</h2>
-            <p>Visualization of the history of <span id="repo_name"></span> repository.<br> Each star represents a file, the more changes it has, the brighter it shines.<br>
-            Different types of files are represented by different colors:
-            <ul style="columns:2">
-                <li style="color:rgb(196,255,196)">test related</li>
-                <li style="color:rgb(255,196,196)">localization and logging</li>
-                <li style="color:rgb(196,196,255)">project files</li>
-                <li style="color:rgb(255,255,196)">headers</li>
-                <li style="color:rgb(255,255,255)">everything else</li>
-            </ul>
-            </p>
+        <canvas id="canvas"></canvas>
+        <div style="display: none">
+            <img id="moon" src="./full-moon.png" width="50" height="50" />
         </div>
-        <div>
-            <h2>Controls</h2>
-            <span>Use mouse to see star details</span>
-            <h4>Keyboard</h4>
-            <ul style="columns:2">
-                <li>0 - pause</li>
-                <li>1 - set speed to day/second</li>
-                <li>2 - set speed to week/second</li>
-                <li style="padding-right: 3em;">3 - set speed to month/second</li>
-                <li>R - Restart from beginning</li>
-                <li>C - Show/hide constellations</li>
-                <li>H / ? - Toggle help</li>
+        <div id="flash">
+            <h1 id="repo"></h1>
+            <div id="progress">Loading...</div>
         </div>
-        <div style="padding:0 1em;padding-top:8%;text-align:right">
-            <div id="powered" style="display:inline-block;text-align:right;padding: 0 0;">Powered&nbsp;by <span class="nf-fa-git" style="font-size:1.3em; vertical-align: bottom; margin-right:3px;">&#xe702;<span class="repoInSummary">ALAXY</span></span></div>
+        <div id="tooltip"><span id="starname"></span><br /><span id="galaxy"></span></div>
+        <div id="help">
+            <div>
+                <h2>Info</h2>
+                <ul>
+                    <li>Repository: <span id="info_repo"></span></li>
+                    <li>Start: <span id="info_start"></span></li>
+                    <li>End: <span id="info_end"></span></li>
+                    <li>Commits: <span id="info_commits"></span></li>
+                </ul>
+            </div>
+            <div>
+                <h2>Legend</h2>
+                <p>
+                    Visualization of the history of <span id="repo_name"></span> repository.<br />
+                    Each star represents a file, the more changes it has, the brighter it shines.<br />
+                    Different types of files are represented by different colors:
+                </p>
+                <ul style="columns: 2">
+                    <li style="color: rgb(196, 255, 196)">test related</li>
+                    <li style="color: rgb(255, 196, 196)">localization and logging</li>
+                    <li style="color: rgb(196, 196, 255)">project files</li>
+                    <li style="color: rgb(255, 255, 196)">headers</li>
+                    <li style="color: rgb(255, 255, 255)">everything else</li>
+                </ul>
+            </div>
+            <div>
+                <h2>Controls</h2>
+                <span>Use mouse to see star details</span>
+                <h4>Keyboard</h4>
+                <ul style="columns: 2">
+                    <li>0 - pause</li>
+                    <li>1 - set speed to day/second</li>
+                    <li>2 - set speed to week/second</li>
+                    <li style="padding-right: 3em">3 - set speed to month/second</li>
+                    <li>R - Restart from beginning</li>
+                    <li>C - Show/hide constellations</li>
+                    <li>H / ? - Toggle help</li>
+                </ul>
+            </div>
+            <div style="padding: 0 1em; padding-top: 8%; text-align: right">
+                <div id="powered" style="display: inline-block; text-align: right; padding: 0 0">
+                    Powered&nbsp;by
+                    <span class="nf-fa-git" style="font-size: 1.3em; vertical-align: bottom; margin-right: 3px"
+                        >&#xe702;<span class="repoInSummary">ALAXY</span></span
+                    >
+                </div>
+            </div>
         </div>
-    </div>
-    <script src="./index.js"></script>
-  </body>
+        <script src="./index.js"></script>
+    </body>
 </html>
-
