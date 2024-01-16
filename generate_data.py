@@ -6,6 +6,7 @@ from functools import cache
 import math
 import json
 
+
 class Galaxy:
     def __init__(self, path):
         if path.startswith("00"):
@@ -13,18 +14,20 @@ class Galaxy:
         self.size = 1
         self.path = path
         h = blake2b(digest_size=4)
-        h.update(bytes(path, 'utf-8'))
+        h.update(bytes(path, "utf-8"))
         d = h.digest()
-        self.x = d[0]*256+d[1]
-        self.y = d[2]*256+d[3]
+        self.x = d[0] * 256 + d[1]
+        self.y = d[2] * 256 + d[3]
         self.scale = 3 + d[0] % 3
+
     def add(self):
         self.size += 1
+
 
 class Star:
     def __init__(self, g, fname):
         hn = blake2b(digest_size=2)
-        hn.update(bytes(fname, 'utf-8'))
+        hn.update(bytes(fname, "utf-8"))
         dn = hn.digest()
         dist = dn[0] * dn[0] / 256 * g.scale * 3
         angle = dn[1]
@@ -36,14 +39,16 @@ class Star:
         fullpath = os.path.join(g.path, fname).lower()
         if "test" in fullpath:
             self.c = "test"
+
     def as_dict(self):
         return {
             "x": self.x,
             "y": self.y,
             "n": self.fname,
             "c": self.c,
-            "g": self.g.path
+            "g": self.g.path,
         }
+
 
 @dataclass
 class State:
@@ -53,6 +58,7 @@ class State:
     changed: list[dict] = field(default_factory=list)
     removed: list[dict] = field(default_factory=list)
 
+
 @dataclass
 class SavedState:
     start: str = None
@@ -60,14 +66,16 @@ class SavedState:
     data: list[str] = field(default_factory=list)
     commit: str = None
     counter: int = 0
+
     def as_dict(self):
         return {
             "start": self.start,
             "end": self.end,
             "data": self.data,
             "commit": self.commit,
-            "counter": self.counter
+            "counter": self.counter,
         }
+
 
 class Sky:
     def __init__(self, cfg):
@@ -81,7 +89,7 @@ class Sky:
         self.saved = SavedState()
 
     def get_repo_name(self):
-        git_args = ['git', 'remote', 'get-url', 'origin']
+        git_args = ["git", "remote", "get-url", "origin"]
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
         if c.returncode != 0:
             return os.path.basename(self.root)
@@ -91,11 +99,11 @@ class Sky:
         return name
 
     def load_galaxies(self):
-        git_args = ['git', 'ls-files']
+        git_args = ["git", "ls-files"]
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
         if c.returncode != 0:
             raise f"Failed to load galaxies({c.returncode}): {c.stderr}"
-        lines = c.stdout.split('\n')
+        lines = c.stdout.split("\n")
         for line in lines:
             line = line.strip()
             if len(line) == 0:
@@ -119,22 +127,26 @@ class Sky:
     def save_changes(self, force=False):
         if self.saved.start is None:
             if len(self.changes) > 0:
-                self.saved.start = self.changes[0]['date']
+                self.saved.start = self.changes[0]["date"]
         need_save = force
         if not need_save:
             size = 0
             for c in self.changes:
-                size += len(c['on']) + len(c['off'])
+                size += len(c["on"]) + len(c["off"])
             if size < 10000:
                 return
 
         if len(self.changes) == 0:
             return
         os.makedirs(self.output, exist_ok=True)
-        json.dump(self.changes, open(f"{self.output}/{self.saved.counter}.json", "w"), indent=4)
+        json.dump(
+            self.changes,
+            open(f"{self.output}/{self.saved.counter}.json", "w"),
+            indent=4,
+        )
         if len(self.changes) > 0:
-            self.saved.end = self.changes[-1]['date']
-            self.saved.commit = self.changes[-1]['commit']
+            self.saved.end = self.changes[-1]["date"]
+            self.saved.commit = self.changes[-1]["commit"]
         self.changes = []
         self.saved.data.append(f"{self.saved.counter}.json")
         print(f"Saved {self.saved.counter} changes")
@@ -148,11 +160,11 @@ class Sky:
     def load_index(self):
         if os.path.exists(f"{self.output}/index.json"):
             index = json.load(open(f"{self.output}/index.json", "r"))
-            self.saved.start = index['start']
-            self.saved.end = index['end']
-            self.saved.commit = index['commit']
-            self.saved.counter = index['counter']
-            self.saved.data = index['data']
+            self.saved.start = index["start"]
+            self.saved.end = index["end"]
+            self.saved.commit = index["commit"]
+            self.saved.counter = index["counter"]
+            self.saved.data = index["data"]
 
     def applicable_change(self, change):
         if change.author is None:
@@ -165,9 +177,17 @@ class Sky:
 
     def generate_changes(self):
         self.load_index()
-        git_args = ['git', 'log', '--format==%ad %H %ae', '--date=format:%Y-%m-%d', '--name-status', '--reverse', '--no-renames']
+        git_args = [
+            "git",
+            "log",
+            "--format==%ad %H %ae",
+            "--date=format:%Y-%m-%d",
+            "--name-status",
+            "--reverse",
+            "--no-renames",
+        ]
         if self.all_branches:
-            git_args.append('--all')
+            git_args.append("--all")
         if self.saved.commit is not None:
             git_args.append(f"{self.saved.commit}..HEAD")
         c = subprocess.run(git_args, cwd=self.root, capture_output=True, text=True)
@@ -176,7 +196,7 @@ class Sky:
 
         cnt = 0
 
-        lines = c.stdout.split('\n')
+        lines = c.stdout.split("\n")
         print(f"Loaded {len(lines)} lines")
 
         s = State()
@@ -185,17 +205,19 @@ class Sky:
             line = line.strip()
             if len(line) == 0:
                 continue
-            if line.startswith('='):
+            if line.startswith("="):
                 if len(s.changed) > 0 or len(s.removed) > 0:
                     if self.applicable_change(s):
-                        self.changes.append({
-                            "id": cnt,
-                            "date": s.date,
-                            "commit": s.commit,
-                            "author": s.author,
-                            "on": s.changed,
-                            "off": s.removed
-                            })
+                        self.changes.append(
+                            {
+                                "id": cnt,
+                                "date": s.date,
+                                "commit": s.commit,
+                                "author": s.author,
+                                "on": s.changed,
+                                "off": s.removed,
+                            }
+                        )
                     self.save_changes()
                     cnt += 1
 
@@ -217,33 +239,39 @@ class Sky:
                 if ignored:
                     continue
                 dname, fname = os.path.split(fpath)
-                if line.startswith('D'):
+                if line.startswith("D"):
                     s.removed.append(self.get_star(dname, fname).as_dict())
-                elif line.startswith('R'):
+                elif line.startswith("R"):
                     pass
                 else:
                     s.changed.append(self.get_star(dname, fname).as_dict())
 
         if self.applicable_change(s):
-            self.changes.append({
-                "id": cnt,
-                "date": s.date,
-                "commit": s.commit,
-                "author": s.author,
-                "on": s.changed,
-                "off": s.removed
-                })
+            self.changes.append(
+                {
+                    "id": cnt,
+                    "date": s.date,
+                    "commit": s.commit,
+                    "author": s.author,
+                    "on": s.changed,
+                    "off": s.removed,
+                }
+            )
         self.save_changes(force=True)
         self.save_index()
 
+
 if __name__ == "__main__":
     import argparse
+
     parser = argparse.ArgumentParser()
-    parser.add_argument('-r', '--root', help='root directory of the repository', required=True)
-    parser.add_argument('-o', '--output', help='output directory', required=True)
-    parser.add_argument('-x', '--exclude', help='exclude author', action='append')
-    parser.add_argument('-a', '--all', help='include all branches', action='store_true')
-    parser.add_argument('-i', '--ignore', help='ignore path', action='append')
+    parser.add_argument(
+        "-r", "--root", help="root directory of the repository", required=True
+    )
+    parser.add_argument("-o", "--output", help="output directory", required=True)
+    parser.add_argument("-x", "--exclude", help="exclude author", action="append")
+    parser.add_argument("-a", "--all", help="include all branches", action="store_true")
+    parser.add_argument("-i", "--ignore", help="ignore path", action="append")
     args = parser.parse_args()
     sky = Sky(args)
     sky.generate_changes()
