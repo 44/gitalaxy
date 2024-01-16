@@ -1,7 +1,5 @@
 import subprocess
-import sys
 import os
-from collections import defaultdict
 from dataclasses import dataclass, field
 from hashlib import blake2b
 from functools import cache
@@ -98,19 +96,19 @@ class Sky:
         if c.returncode != 0:
             raise f"Failed to load galaxies({c.returncode}): {c.stderr}"
         lines = c.stdout.split('\n')
-        for l in lines:
-            l = l.strip()
-            if len(l) == 0:
+        for line in lines:
+            line = line.strip()
+            if len(line) == 0:
                 continue
-            dname, fname = os.path.split(l)
-            if not dname in self.galaxies:
+            dname, fname = os.path.split(line)
+            if dname not in self.galaxies:
                 self.galaxies[dname] = Galaxy(dname)
             else:
                 self.galaxies[dname].add()
 
     @cache
     def get_galaxy(self, dname):
-        if not dname in self.galaxies:
+        if dname not in self.galaxies:
             self.galaxies[dname] = Galaxy(dname)
         return self.galaxies[dname]
 
@@ -183,14 +181,11 @@ class Sky:
 
         s = State()
 
-        current = None
-        biggest = 0
-
-        for l in lines:
-            l = l.strip()
-            if len(l) == 0:
+        for line in lines:
+            line = line.strip()
+            if len(line) == 0:
                 continue
-            if l.startswith('='):
+            if line.startswith('='):
                 if len(s.changed) > 0 or len(s.removed) > 0:
                     if self.applicable_change(s):
                         self.changes.append({
@@ -206,13 +201,13 @@ class Sky:
 
                 s = State()
                 # format =2021-08-31 <commit - 40 chars> <author>
-                s.date = l[1:11]
-                s.commit = l[12:52]
-                s.author = l[53:].strip()
+                s.date = line[1:11]
+                s.commit = line[12:52]
+                s.author = line[53:].strip()
                 if "@" in s.author:
                     s.author = s.author.split("@")[0]
             else:
-                fpath = l[2:].strip()
+                fpath = line[2:].strip()
                 ignored = False
                 if self.ignore is not None:
                     for i in self.ignore:
@@ -222,15 +217,12 @@ class Sky:
                 if ignored:
                     continue
                 dname, fname = os.path.split(fpath)
-                if l.startswith('D'):
+                if line.startswith('D'):
                     s.removed.append(self.get_star(dname, fname).as_dict())
-                elif l.startswith('R'):
+                elif line.startswith('R'):
                     pass
                 else:
-                    try:
-                        s.changed.append(self.get_star(dname, fname).as_dict())
-                    except:
-                        print(f"Failed to get star for '{l}'")
+                    s.changed.append(self.get_star(dname, fname).as_dict())
 
         if self.applicable_change(s):
             self.changes.append({
